@@ -1,0 +1,15 @@
+asgiref==3.12.1
+Django==6.1
+django-cors-headers==4.9.0
+django-filter==26.1
+djangorestframework==3.18.0
+docopt==0.6.2
+google-api-python-client==2.115.0
+google-auth==2.26.2
+num2words==0.5.14
+psycopg==3.3.4
+psycopg-binary==3.3.4
+python-dotenv==1.2.3
+sqlparse==0.6.0
+tzdata==2026.3
+xhtml2pdf==0.2.17

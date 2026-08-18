@@ -1,0 +1,259 @@
+/* c:\Users\karth\Downloads\coal-invoice-system\frontend\src\components\invoice\InvoiceDocument.css */
+
+.invoice-document-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: #f1f5f9;
+  min-height: calc(100vh - 150px);
+}
+
+.invoice-document {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 3rem;
+  color: #1e293b;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+}
+
+/* Header */
+.invoice-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #334155;
+  padding-bottom: 1rem;
+}
+
+.business-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.business-details p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.ms-3 {
+  margin-left: 1rem;
+}
+
+/* Title */
+.invoice-title-bar {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.invoice-title-bar h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: inline-block;
+  padding: 0.25rem 1rem;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* Top Info Grid */
+.invoice-info-grid {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background-color: #f8fafc;
+}
+
+.invoice-info-box p {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.invoice-info-box p:last-child {
+  margin: 0;
+}
+
+/* Receiver Section */
+.receiver-section {
+  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.receiver-section h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.receiver-section p {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.95rem;
+}
+
+/* Table */
+.invoice-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.invoice-table th,
+.invoice-table td {
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem 0.5rem;
+}
+
+.invoice-table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  text-align: left;
+}
+
+.text-right {
+  text-align: right !important;
+}
+.text-center {
+  text-align: center !important;
+}
+
+/* Summary Area */
+.invoice-summary-area {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  margin-top: -1.5rem; /* pull up to connect to table */
+}
+
+.summary-spacer {
+  flex: 1;
+  border-right: 1px solid #cbd5e1;
+}
+
+.summary-totals {
+  width: 35%;
+  min-width: 250px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.grand-total {
+  font-weight: 700;
+  font-size: 1.1rem;
+  background-color: #f8fafc;
+}
+
+/* Amount in Words */
+.invoice-words {
+  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
+}
+
+/* Footer Area */
+.invoice-footer-area {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  border-top: 2px solid #334155;
+  padding-top: 1.5rem;
+}
+
+.footer-left {
+  flex: 2;
+}
+
+.bank-details h4,
+.terms-conditions h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.bank-details p,
+.terms-conditions p {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.footer-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.signature-space {
+  height: 80px; /* space for stamp/signature */
+}
+
+.signature-area p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .invoice-document {
+    padding: 1.5rem;
+  }
+  
+  .invoice-info-grid {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .invoice-footer-area {
+    flex-direction: column;
+  }
+  
+  .footer-right {
+    align-items: center;
+    margin-top: 2rem;
+  }
+  
+  .summary-totals {
+    width: 100%;
+  }
+  .summary-spacer {
+    display: none;
+  }
+  .invoice-summary-area {
+    flex-direction: column;
+  }
+}
