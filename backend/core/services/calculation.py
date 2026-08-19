@@ -144,7 +144,10 @@ def calculate_invoice_totals(
     igst_amount = (taxable_amount * igst_rate / HUNDRED).quantize(
         TWO_PLACES, rounding=ROUND_HALF_UP
     )
-    tcs_amount  = (taxable_amount * tcs_rate  / HUNDRED).quantize(
+    
+    # TCS is calculated on the total invoice value (taxable + GST)
+    tcs_base = taxable_amount + cgst_amount + sgst_amount + igst_amount
+    tcs_amount  = (tcs_base * tcs_rate  / HUNDRED).quantize(
         TWO_PLACES, rounding=ROUND_HALF_UP
     )
 

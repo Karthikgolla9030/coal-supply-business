@@ -3,25 +3,33 @@ import io
 import re
 from datetime import datetime
 from django.conf import settings
-from google.oauth2 import service_account
+import google.oauth2.credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from googleapiclient.errors import HttpError
 
-from ..models import Invoice, GoogleDriveStatus
+from ..models import Invoice, GoogleDriveStatus, BusinessProfile
 
 logger = logging.getLogger(__name__)
 
 # Scopes required for Drive API to create/upload files
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-def get_drive_service():
-    """Initializes and returns the Google Drive API client."""
-    if not settings.GOOGLE_SERVICE_ACCOUNT_FILE:
-        raise ValueError("Google Service Account file not configured.")
+def get_drive_service(business):
+    """Initializes and returns the Google Drive API client using OAuth 2.0."""
+    if not business or not business.google_oauth_refresh_token:
+        raise ValueError("Google Drive is not connected. Refresh token missing.")
+        
+    if not settings.GOOGLE_OAUTH_CLIENT_ID or not settings.GOOGLE_OAUTH_CLIENT_SECRET:
+        raise ValueError("Google OAuth Client ID or Secret is missing in configuration.")
     
-    creds = service_account.Credentials.from_service_account_file(
-        settings.GOOGLE_SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    creds = google.oauth2.credentials.Credentials(
+        token=None,
+        refresh_token=business.google_oauth_refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=settings.GOOGLE_OAUTH_CLIENT_ID,
+        client_secret=settings.GOOGLE_OAUTH_CLIENT_SECRET,
+        scopes=SCOPES
     )
     return build('drive', 'v3', credentials=creds, cache_discovery=False)
 
@@ -44,8 +52,12 @@ def upload_invoice_pdf(invoice: Invoice, pdf_content: bytes) -> bool:
         logger.info(f"Google Drive upload skipped for Invoice {invoice.invoice_number} (Disabled).")
         return False
 
-    if not settings.GOOGLE_DRIVE_FOLDER_ID:
-        logger.error("Google Drive folder ID is missing.")
+    if not invoice.business:
+        logger.error(f"Invoice {invoice.invoice_number} has no associated business profile.")
+        return False
+        
+    if not invoice.business.google_drive_folder_id:
+        logger.error(f"Google Drive folder ID is missing for business {invoice.business.business_name}.")
         return False
 
     # Prevent duplicate uploads
@@ -57,7 +69,7 @@ def upload_invoice_pdf(invoice: Invoice, pdf_content: bytes) -> bool:
     invoice.save(update_fields=["google_drive_status"])
 
     try:
-        drive_service = get_drive_service()
+        drive_service = get_drive_service(invoice.business)
 
         # Build safe filename
         customer_name = sanitize_filename(invoice.customer.name) if invoice.customer else "Unknown"
@@ -66,13 +78,14 @@ def upload_invoice_pdf(invoice: Invoice, pdf_content: bytes) -> bool:
 
         file_metadata = {
             'name': filename,
-            'parents': [settings.GOOGLE_DRIVE_FOLDER_ID]
+            'parents': [invoice.business.google_drive_folder_id]
         }
 
         media = MediaIoBaseUpload(io.BytesIO(pdf_content), mimetype='application/pdf', resumable=True)
 
         logger.info(f"Uploading {filename} to Google Drive...")
         
+        # supportsAllDrives=True is removed because we are uploading to My Drive
         file = drive_service.files().create(
             body=file_metadata,
             media_body=media,
@@ -98,6 +111,8 @@ def upload_invoice_pdf(invoice: Invoice, pdf_content: bytes) -> bool:
 
     except HttpError as error:
         logger.error(f"Google Drive API error during upload for Invoice {invoice.invoice_number}: {error}")
+    except ValueError as error:
+        logger.error(f"Google Drive configuration error for Invoice {invoice.invoice_number}: {error}")
     except Exception as e:
         logger.error(f"Unexpected error uploading Invoice {invoice.invoice_number} to Google Drive: {e}")
 

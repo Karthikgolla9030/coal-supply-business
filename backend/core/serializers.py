@@ -95,6 +95,7 @@ class CustomerListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "gst_registered",
             "gstin",
             "phone",
             "state",
@@ -125,6 +126,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "address",
+            "gst_registered",
             "gstin",
             "state",
             "state_code",
@@ -150,6 +152,29 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         if value:
             validate_phone(value)
         return value
+
+    def validate(self, data):
+        gst_registered = data.get('gst_registered')
+        
+        # When doing partial updates, we might not have all fields in `data`.
+        # So we merge with `self.instance` values if they exist.
+        if self.instance:
+            if 'gst_registered' not in data:
+                gst_registered = self.instance.gst_registered
+
+        if gst_registered:
+            gstin = data.get('gstin', self.instance.gstin if self.instance else '')
+            if not gstin:
+                raise serializers.ValidationError({"gstin": "GSTIN is required for a GST-registered customer."})
+            
+            state_code = data.get('state_code', self.instance.state_code if self.instance else '')
+            if state_code and gstin[:2] != state_code:
+                raise serializers.ValidationError({"non_field_errors": ["GSTIN state code does not match the selected customer state."]})
+        else:
+            # Force empty GSTIN if unregistered
+            data['gstin'] = ""
+            
+        return data
 
 
 # ─────────────────────────────────────────────────────────────
@@ -224,11 +249,26 @@ class InvoiceCreateSerializer(serializers.Serializer):
         queryset=Customer.objects.filter(is_active=True)
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Limit the customer choices to the current user's business profile
+        request = self.context.get('request')
+        if request and hasattr(request.user, 'business_profile'):
+            self.fields['customer'].queryset = Customer.objects.filter(
+                is_active=True, 
+                business=request.user.business_profile
+            )
+        else:
+            self.fields['customer'].queryset = Customer.objects.none()
+
     # ── Transport ─────────────────────────────────────────────
     transport_name = serializers.CharField(max_length=255, allow_blank=True, default="")
     vehicle_number = serializers.CharField(max_length=20, allow_blank=True, default="")
 
     # ── Tax rates (percentages) ───────────────────────────────
+    gst_rate = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=Decimal("0.00"), max_value=Decimal("100.00"), default=Decimal("0.00"), write_only=True
+    )
     cgst_rate = serializers.DecimalField(
         max_digits=5, decimal_places=2, min_value=Decimal("0.00"), max_value=Decimal("100.00"), default=Decimal("0.00")
     )
@@ -264,29 +304,53 @@ class InvoiceCreateSerializer(serializers.Serializer):
         Cross-field validation: ensure invoice_number is unique per business
         and tax configuration is consistent.
         """
-        business = BusinessProfile.objects.first()
-        if business is None:
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'business_profile'):
             raise serializers.ValidationError(
                 {"non_field_errors": ["No business profile found. Please create one before adding invoices."]}
             )
-
-        invoice_number = data.get("invoice_number", "")
+        business = request.user.business_profile
+        
+        invoice_number = data.get("invoice_number")
         if invoice_number and Invoice.objects.filter(
-            business=business, invoice_number=invoice_number
+            business=business, 
+            invoice_number__iexact=invoice_number
         ).exists():
             raise serializers.ValidationError(
                 {"invoice_number": f"Invoice number '{invoice_number}' already exists for this business."}
             )
 
-        # Tax Consistency: Cannot have CGST/SGST mixed with IGST
+        # Tax Consistency & GST Auto-Detection
+        customer = data.get("customer")
+        if not business.state:
+            raise serializers.ValidationError({"non_field_errors": ["Business state is required to determine GST. Please complete your Business Profile."]})
+        if customer and not customer.state:
+            raise serializers.ValidationError({"non_field_errors": ["Customer state is required to determine GST."]})
+            
+        b_state = business.state.strip().lower()
+        c_state = customer.state.strip().lower() if customer else ""
+        
         cgst = data.get("cgst_rate", Decimal("0.00"))
         sgst = data.get("sgst_rate", Decimal("0.00"))
         igst = data.get("igst_rate", Decimal("0.00"))
-
-        if (cgst > 0 or sgst > 0) and (igst > 0):
-            raise serializers.ValidationError(
-                {"non_field_errors": ["Tax consistency error: An invoice cannot apply both CGST/SGST and IGST simultaneously."]}
-            )
+        
+        # Determine effective gst_rate based on new payload or fallback
+        gst_rate = data.get("gst_rate")
+        if gst_rate is None or gst_rate == Decimal("0.00"):
+            if cgst > 0 or sgst > 0 or igst > 0:
+                gst_rate = cgst + sgst + igst
+            else:
+                gst_rate = Decimal("0.00")
+                
+        # Authoritative overrides
+        if b_state == c_state:
+            data["cgst_rate"] = (gst_rate / Decimal("2")).quantize(Decimal("0.01"))
+            data["sgst_rate"] = (gst_rate / Decimal("2")).quantize(Decimal("0.01"))
+            data["igst_rate"] = Decimal("0.00")
+        else:
+            data["cgst_rate"] = Decimal("0.00")
+            data["sgst_rate"] = Decimal("0.00")
+            data["igst_rate"] = gst_rate
 
         return data
 
@@ -309,8 +373,10 @@ class InvoiceCreateSerializer(serializers.Serializer):
         """
         items_data = validated_data.pop("items")
         customer   = validated_data.pop("customer")
+        validated_data.pop("gst_rate", None)  # write_only field
 
-        business = BusinessProfile.objects.first()
+        request = self.context.get('request')
+        business = request.user.business_profile
 
         # ── Calculate all amounts server-side ──────────────────
         totals = calculate_invoice_totals(

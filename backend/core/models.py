@@ -28,6 +28,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.conf import settings
 
 
 # ─────────────────────────────────────────────────────────────
@@ -65,6 +66,14 @@ class BusinessProfile(models.Model):
     model supports multiple businesses for future multi-tenancy.
     """
 
+    owner = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="business_profile",
+        null=True,
+        blank=True,
+        help_text="The user who registered and owns this business profile."
+    )
     business_name = models.CharField(max_length=255)
     gstin = models.CharField(
         max_length=15,
@@ -90,6 +99,20 @@ class BusinessProfile(models.Model):
     )
 
     terms_and_conditions = models.TextField(blank=True, default="")
+
+    # Google Drive Integration
+    google_oauth_refresh_token = models.CharField(
+        max_length=255, 
+        blank=True, 
+        default="",
+        help_text="OAuth 2.0 refresh token for uploading to the owner's Google Drive"
+    )
+    google_drive_folder_id = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Google Drive Folder ID where invoices are uploaded"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -119,8 +142,19 @@ class Customer(models.Model):
     db_index=True for fast lookups.
     """
 
+    business = models.ForeignKey(
+        BusinessProfile,
+        on_delete=models.CASCADE,
+        related_name="customers",
+        help_text="The business that owns this customer record.",
+        null=True,  # Temporarily allow null for migration
+    )
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True, default="")
+    gst_registered = models.BooleanField(
+        default=False,
+        help_text="Whether this customer has a valid GST registration",
+    )
     gstin = models.CharField(
         max_length=15,
         blank=True,

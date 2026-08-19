@@ -20,20 +20,22 @@ function calcTax(base, rateStr) {
   return (base * r) / 100;
 }
 
-export default function InvoiceSummary({ taxableAmount, cgstRate, sgstRate, igstRate, tcsRate }) {
+export default function InvoiceSummary({ taxableAmount, gstRate, tcsRate, isIntra }) {
   const base = isNaN(taxableAmount) ? 0 : taxableAmount;
-  const cgst = calcTax(base, cgstRate);
-  const sgst = calcTax(base, sgstRate);
-  const igst = calcTax(base, igstRate);
+  const rate = parseFloat(gstRate) || 0;
+  
+  const cgst = isIntra ? calcTax(base, rate / 2) : 0;
+  const sgst = isIntra ? calcTax(base, rate / 2) : 0;
+  const igst = !isIntra ? calcTax(base, rate) : 0;
   const tcs  = calcTax(base, tcsRate);
   const total = base + cgst + sgst + igst + tcs;
 
   const rows = [
-    { label: 'Taxable Amount', value: base,  highlight: false },
-    { label: `CGST (${cgstRate || 0}%)`,    value: cgst,  highlight: false },
-    { label: `SGST (${sgstRate || 0}%)`,    value: sgst,  highlight: false },
-    { label: `IGST (${igstRate || 0}%)`,    value: igst,  highlight: false },
-    { label: `TCS (${tcsRate || 0}%)`,      value: tcs,   highlight: false },
+    { label: 'Taxable Amount', value: base,  highlight: false, show: true },
+    { label: `CGST (${rate/2}%)`, value: cgst,  highlight: false, show: isIntra },
+    { label: `SGST (${rate/2}%)`, value: sgst,  highlight: false, show: isIntra },
+    { label: `IGST (${rate}%)`, value: igst,  highlight: false, show: !isIntra },
+    { label: `TCS (${tcsRate || 0}%)`, value: tcs, highlight: false, show: true },
   ];
 
   return (
@@ -41,7 +43,7 @@ export default function InvoiceSummary({ taxableAmount, cgstRate, sgstRate, igst
       <div className="card-title">Invoice Summary</div>
 
       <div style={{ maxWidth: '420px', marginLeft: 'auto' }}>
-        {rows.map(({ label, value }) => (
+        {rows.filter(r => r.show).map(({ label, value }) => (
           <div key={label} style={{
             display: 'flex',
             justifyContent: 'space-between',

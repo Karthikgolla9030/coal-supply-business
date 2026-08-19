@@ -1,12 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import InvoiceInfoSection from '../components/invoice/InvoiceInfoSection';
 import TransportSection from '../components/invoice/TransportSection';
 import CustomerSelector from '../components/invoice/CustomerSelector';
 import InvoiceItemsSection, { EMPTY_ITEM } from '../components/invoice/InvoiceItemsSection';
-import TaxSection from '../components/invoice/TaxSection';
+import TaxSummary from '../components/invoice/TaxSummary';
 import InvoiceSummary from '../components/invoice/InvoiceSummary';
 import InvoiceSuccess from '../components/invoice/InvoiceSuccess';
 import { createInvoice } from '../api/invoices';
+import { getBusinessProfile } from '../api/businessProfile';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 /* ── Initial form state ─────────────────────────────────────── */
 function freshForm() {
@@ -17,9 +19,7 @@ function freshForm() {
     transaction_type: 'CASH',
     transport_name:   '',
     vehicle_number:   '',
-    cgst_rate:        '0.00',
-    sgst_rate:        '0.00',
-    igst_rate:        '0.00',
+    gst_rate:         '18.00',
     tcs_rate:         '0.00',
     reverse_charge:   false,
   };
@@ -55,9 +55,18 @@ export default function InvoiceNew() {
   const [saving, setSaving] = useState(false);
   const [topAlert, setTopAlert] = useState(null);
   const [createdInvoice, setCreatedInvoice] = useState(null);
+  const [businessProfile, setBusinessProfile] = useState(null);
+
+  useEffect(() => {
+    getBusinessProfile()
+      .then(res => setBusinessProfile(res.data))
+      .catch(() => {}); // Missing profile handled by validateFrontend/UI
+  }, []);
 
   /* ── Derived ───────────────────────────────────────────────── */
   const taxableAmount = calcTaxable(items);
+  const isIntra = businessProfile?.state && selectedCustomer?.state && 
+                  businessProfile.state.toLowerCase() === selectedCustomer.state.toLowerCase();
 
   /* ── Handlers ──────────────────────────────────────────────── */
   const handleFormChange = useCallback((field, value) => {
@@ -102,8 +111,12 @@ export default function InvoiceNew() {
     if (!form.invoice_date)          { errs.invoice_date   = 'Invoice date is required.';   valid = false; }
     if (!form.transaction_type)      { errs.transaction_type = 'Select a transaction type.'; valid = false; }
     if (!selectedCustomer)           { errs.customer = 'Please select a customer.';         valid = false; }
+    
+    if (!businessProfile?.state || !selectedCustomer?.state) {
+      valid = false;
+    }
 
-    const taxRates = ['cgst_rate', 'sgst_rate', 'igst_rate', 'tcs_rate'];
+    const taxRates = ['gst_rate', 'tcs_rate'];
     for (const key of taxRates) {
       const v = parseFloat(form[key]);
       if (isNaN(v) || v < 0) { errs[key] = 'Must be 0 or greater.'; valid = false; }
@@ -200,7 +213,8 @@ export default function InvoiceNew() {
       {/* Top alert */}
       {topAlert && (
         <div className={`alert alert-${topAlert.type}`}>
-          {topAlert.type === 'error' ? '✕ ' : '✓ '}{topAlert.message}
+          {topAlert.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle size={18} />}
+          <span>{topAlert.message}</span>
         </div>
       )}
 
@@ -237,20 +251,21 @@ export default function InvoiceNew() {
         />
 
         {/* 5. Tax Details */}
-        <TaxSection
+        <TaxSummary
+          business={businessProfile}
+          customer={selectedCustomer}
           taxableAmount={taxableAmount}
           data={form}
           errors={errors}
-          onChange={handleFormChange}
+          onChange={(e) => handleFormChange(e.target.name, e.target.value)}
         />
 
         {/* 6. Invoice Summary */}
         <InvoiceSummary
           taxableAmount={taxableAmount}
-          cgstRate={form.cgst_rate}
-          sgstRate={form.sgst_rate}
-          igstRate={form.igst_rate}
+          gstRate={form.gst_rate}
           tcsRate={form.tcs_rate}
+          isIntra={isIntra}
         />
 
         {/* 7. Actions */}

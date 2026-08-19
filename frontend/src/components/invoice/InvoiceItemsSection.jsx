@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import FormField from '../FormField';
+import { Plus, X } from 'lucide-react';
 
 const UNIT_OPTIONS = ['MT', 'KG', 'TON', 'QTL', 'NOS'];
 
@@ -45,8 +46,8 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
     <div className="card">
       <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>Product Details</span>
-        <button type="button" className="btn btn-secondary btn-sm" id="add-item-btn" onClick={onAdd}>
-          + Add Item
+        <button type="button" className="btn btn-secondary btn-sm" id="add-item-btn" onClick={onAdd} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <Plus size={14} /> Add Item
         </button>
       </div>
 
@@ -197,7 +198,7 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
                     id={`remove-item-${idx}`}
                   >
-                    ✕
+                    <X size={16} />
                   </button>
                 </td>
               </tr>

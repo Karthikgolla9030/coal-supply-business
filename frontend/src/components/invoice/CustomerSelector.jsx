@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import FormField from '../FormField';
 import { getCustomers, createCustomer } from '../../api/customers';
+import { INDIAN_STATES, getStateCode } from '../../utils/states';
+import { Plus, X, Search } from 'lucide-react';
 
 function useDebounce(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -14,15 +16,25 @@ function useDebounce(value, delay = 350) {
 /* ── Add New Customer Modal ─────────────────────────────────── */
 function AddCustomerModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
-    name: '', address: '', gstin: '', state: '', state_code: '', phone: '', email: '',
+    name: '', address: '', gst_registered: false, gstin: '', state: '', state_code: '', phone: '', email: '',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    let val = type === 'checkbox' ? checked : value;
+    if (name === 'gst_registered') val = value === 'true';
+
+    if (name === 'state') {
+      const code = getStateCode(val);
+      setForm((p) => ({ ...p, state: val, state_code: code }));
+    } else if (name === 'gst_registered') {
+      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '' }));
+    } else {
+      setForm((p) => ({ ...p, [name]: val }));
+    }
     if (errors[name]) setErrors((p) => ({ ...p, [name]: undefined }));
   };
 
@@ -54,7 +66,7 @@ function AddCustomerModal({ onClose, onCreated }) {
       <div className="modal">
         <div className="modal-header">
           <span className="modal-title">Add New Customer</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} noValidate>
           <div className="modal-body">
@@ -62,18 +74,56 @@ function AddCustomerModal({ onClose, onCreated }) {
             <div className="form-grid">
               <FormField label="Customer Name" name="name" id="new_cust_name" required
                 value={form.name} onChange={handleChange} error={errors.name} placeholder="e.g. ABC Traders" />
-              <FormField label="GSTIN" name="gstin" id="new_cust_gstin"
-                value={form.gstin} onChange={handleChange} error={errors.gstin}
-                placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
+              
+              <div className="form-field span-2">
+                <label>GST Registration *</label>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                    <input type="radio" name="gst_registered" value="true" checked={form.gst_registered === true} onChange={handleChange} />
+                    GST Registered
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                    <input type="radio" name="gst_registered" value="false" checked={form.gst_registered === false} onChange={handleChange} />
+                    Unregistered
+                  </label>
+                </div>
+              </div>
+
+              {form.gst_registered ? (
+                <FormField label="GSTIN *" name="gstin" id="new_cust_gstin" required
+                  value={form.gstin} onChange={handleChange} error={errors.gstin}
+                  placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
+              ) : (
+                <div className="form-field">
+                  <label>GSTIN</label>
+                  <input type="text" value="Not Applicable" disabled className="input disabled" />
+                </div>
+              )}
               <FormField label="Phone" name="phone" id="new_cust_phone" type="tel"
                 value={form.phone} onChange={handleChange} error={errors.phone}
                 placeholder="e.g. 9876543210" />
               <FormField label="Email" name="email" id="new_cust_email" type="email"
                 value={form.email} onChange={handleChange} error={errors.email} />
-              <FormField label="State" name="state" id="new_cust_state"
-                value={form.state} onChange={handleChange} error={errors.state} />
+              <div className="form-field">
+                <label htmlFor="new_cust_state">State</label>
+                <select
+                  id="new_cust_state"
+                  name="state"
+                  value={form.state}
+                  onChange={handleChange}
+                  className={errors.state ? 'error' : ''}
+                >
+                  <option value="">-- Select State --</option>
+                  {INDIAN_STATES.map((s) => (
+                    <option key={s.code} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.state && <div className="error-msg">{errors.state}</div>}
+              </div>
               <FormField label="State Code" name="state_code" id="new_cust_state_code"
-                value={form.state_code} onChange={handleChange} error={errors.state_code} maxLength={10} />
+                value={form.state_code} readOnly help="Derived automatically" />
               <div className="form-field span-2">
                 <FormField label="Address" name="address" id="new_cust_address" as="textarea"
                   value={form.address} onChange={handleChange} error={errors.address} />
@@ -95,7 +145,8 @@ function AddCustomerModal({ onClose, onCreated }) {
 /* ── Customer detail display ────────────────────────────────── */
 function CustomerDisplay({ customer, onClear }) {
   const fields = [
-    ['GSTIN',      customer.gstin],
+    ['GST Status', customer.gst_registered ? 'GST Registered' : 'Unregistered'],
+    ['GSTIN',      customer.gst_registered ? customer.gstin : 'Not Applicable'],
     ['Address',    customer.address],
     ['State',      customer.state],
     ['State Code', customer.state_code],
@@ -201,12 +252,13 @@ export default function CustomerSelector({ selected, onSelect, error }) {
         <CustomerDisplay customer={selected} onClear={handleClear} />
       ) : (
         <div ref={wrapperRef} style={{ position: 'relative' }}>
-          <div className="search-bar" style={{ maxWidth: '100%' }}>
-            <span className="search-bar-icon">🔍</span>
+          <div className="search-bar" style={{ position: 'relative' }}>
+            <span className="search-bar-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}><Search size={16} /></span>
             <input
               id="customer-search-input"
-              className={`form-input${error ? ' error' : ''}`}
               type="text"
+              className={`form-input${error ? ' error' : ''}`}
+              style={{ paddingLeft: '2.5rem' }}
               placeholder="Search customer by name, GSTIN, or phone…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -289,8 +341,9 @@ export default function CustomerSelector({ selected, onSelect, error }) {
               className="btn btn-secondary btn-sm"
               id="add-new-customer-from-invoice"
               onClick={() => setShowModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
             >
-              + Add New Customer
+              <Plus size={14} /> Add New Customer
             </button>
           </div>
         </div>

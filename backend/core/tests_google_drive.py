@@ -14,12 +14,16 @@ class GoogleDriveAPITest(APITestCase):
         self.business = BusinessProfile.objects.create(
             business_name="Test Business",
             gstin="29ABCDE1234F1Z5",
-            phone="9876543210"
+            phone="9876543210",
+            state="Karnataka",
+            state_code="29"
         )
         self.customer = Customer.objects.create(
             name="Test Customer",
             gstin="29XYZDE1234F1Z5",
-            phone="9123456780"
+            phone="9123456780",
+            state="Karnataka",
+            state_code="29"
         )
 
     def _valid_payload(self):
@@ -30,6 +34,7 @@ class GoogleDriveAPITest(APITestCase):
             "customer": self.customer.pk,
             "transport_name": "Test Trans",
             "vehicle_number": "MH-12-1234",
+            "gst_rate": "18.00",
             "items": [
                 {
                     "product_name": "Coal Type A",

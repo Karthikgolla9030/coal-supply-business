@@ -70,7 +70,7 @@ export default function InvoiceDocument({ invoice }) {
           <p><strong>Name:</strong> {customer?.name}</p>
           {customer?.address && <p><strong>Address:</strong> {customer.address}</p>}
           <p>
-            {customer?.gstin && <span><strong>GSTIN:</strong> {customer.gstin}</span>}
+            <span><strong>GSTIN:</strong> {customer?.gst_registered ? customer.gstin : 'Not Registered'}</span>
             {customer?.state && <span className="ms-3"><strong>State:</strong> {customer.state}</span>}
             {customer?.state_code && <span className="ms-3"><strong>State Code:</strong> {customer.state_code}</span>}
           </p>
@@ -119,24 +119,42 @@ export default function InvoiceDocument({ invoice }) {
               <span>{formatCurrency(invoice.taxable_amount)}</span>
             </div>
             
-            {parseFloat(invoice.cgst_amount) > 0 && (
+            {/* CGST */}
+            {parseFloat(invoice.cgst_amount) > 0 ? (
               <div className="summary-row">
                 <span>CGST @ {invoice.cgst_rate}%</span>
                 <span>{formatCurrency(invoice.cgst_amount)}</span>
               </div>
+            ) : (
+              <div className="summary-row" style={{ color: 'var(--color-text-muted)' }}>
+                <span>CGST</span>
+                <span>—</span>
+              </div>
             )}
             
-            {parseFloat(invoice.sgst_amount) > 0 && (
+            {/* SGST */}
+            {parseFloat(invoice.sgst_amount) > 0 ? (
               <div className="summary-row">
                 <span>SGST @ {invoice.sgst_rate}%</span>
                 <span>{formatCurrency(invoice.sgst_amount)}</span>
               </div>
+            ) : (
+              <div className="summary-row" style={{ color: 'var(--color-text-muted)' }}>
+                <span>SGST</span>
+                <span>—</span>
+              </div>
             )}
             
-            {parseFloat(invoice.igst_amount) > 0 && (
+            {/* IGST */}
+            {parseFloat(invoice.igst_amount) > 0 ? (
               <div className="summary-row">
                 <span>IGST @ {invoice.igst_rate}%</span>
                 <span>{formatCurrency(invoice.igst_amount)}</span>
+              </div>
+            ) : (
+              <div className="summary-row" style={{ color: 'var(--color-text-muted)' }}>
+                <span>IGST</span>
+                <span>—</span>
               </div>
             )}
             

@@ -32,13 +32,13 @@ from .validators import validate_gstin, validate_ifsc, validate_phone
 # ─────────────────────────────────────────────────────────────
 
 def make_business(**kwargs):
-    defaults = {"business_name": "Test Coal Supplier"}
+    defaults = {"business_name": "Test Coal Supplier", "state": "Karnataka", "state_code": "29"}
     defaults.update(kwargs)
     return BusinessProfile.objects.create(**defaults)
 
 
 def make_customer(**kwargs):
-    defaults = {"name": "Test Customer"}
+    defaults = {"name": "Test Customer", "state": "Karnataka", "state_code": "29"}
     defaults.update(kwargs)
     return Customer.objects.create(**defaults)
 
@@ -392,7 +392,7 @@ class BusinessProfileAPITest(AuthenticatedAPITestCase):
         self.assertEqual(response.data["business_name"], "Coal Co.")
 
     def test_create_second_profile_is_rejected(self):
-        BusinessProfile.objects.create(business_name="First")
+        BusinessProfile.objects.create(business_name="First", owner=self.user)
         response = self.client.post(self.CREATE_URL, self._valid_payload(), format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -478,6 +478,7 @@ class CustomerAPITest(AuthenticatedAPITestCase):
         data = {
             "name": "ABC Traders",
             "address": "456 Market Road, Bangalore",
+            "gst_registered": True,
             "gstin": "29ABCDE1234F1Z5",
             "state": "Karnataka",
             "state_code": "29",
@@ -520,14 +521,28 @@ class CustomerAPITest(AuthenticatedAPITestCase):
         self.assertEqual(response.data["name"], "ABC Traders")
         self.assertEqual(Customer.objects.count(), 1)
 
-    def test_create_customer_without_gstin(self):
-        payload = self._valid_payload(gstin="")
+    def test_create_customer_unregistered_clears_gstin(self):
+        payload = self._valid_payload(gst_registered=False, gstin="29ABCDE1234F1Z5")
         response = self.client.post(self.CREATE_URL, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["gstin"], "")
+        self.assertFalse(response.data["gst_registered"])
+
+    def test_create_customer_registered_requires_gstin(self):
+        payload = self._valid_payload(gst_registered=True, gstin="")
+        response = self.client.post(self.CREATE_URL, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("gstin", response.data)
+
+    def test_create_customer_registered_requires_matching_state_code(self):
+        payload = self._valid_payload(gst_registered=True, gstin="29ABCDE1234F1Z5", state="Maharashtra", state_code="27")
+        response = self.client.post(self.CREATE_URL, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("non_field_errors", response.data)
 
     def test_create_two_customers_with_same_name_allowed(self):
-        self.client.post(self.CREATE_URL, self._valid_payload(gstin=""), format="json")
-        response = self.client.post(self.CREATE_URL, self._valid_payload(gstin=""), format="json")
+        self.client.post(self.CREATE_URL, self._valid_payload(gst_registered=False, gstin=""), format="json")
+        response = self.client.post(self.CREATE_URL, self._valid_payload(gst_registered=False, gstin=""), format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Customer.objects.count(), 2)
 
@@ -734,8 +749,8 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
     def setUp(self):
         super().setUp()
         # Every test needs a business profile and a customer
-        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.")
-        self.customer = Customer.objects.create(name="Test Buyer", is_active=True)
+        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.", state="Karnataka", state_code="29")
+        self.customer = Customer.objects.create(name="Test Buyer", is_active=True, state="Karnataka", state_code="29")
 
     def _valid_payload(self, **overrides):
         data = {
@@ -745,9 +760,7 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
             "customer":         self.customer.pk,
             "transport_name":   "Fast Transport",
             "vehicle_number":   "AP39TEST",
-            "cgst_rate":        "9.00",
-            "sgst_rate":        "9.00",
-            "igst_rate":        "0.00",
+            "gst_rate":         "18.00",
             "tcs_rate":         "0.00",
             "reverse_charge":   False,
             "items": [
@@ -878,19 +891,21 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
         response = self.client.post(self.CREATE_URL, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # 15. Tax Consistency Error (CGST + IGST)
-    def test_tax_consistency_rejected(self):
-        payload = self._valid_payload(cgst_rate="9.00", igst_rate="18.00")
+    # 15. Tax Consistency is now auto-resolved by states, so we test missing states
+    def test_missing_business_state_rejected(self):
+        self.business.state = ""
+        self.business.save()
+        payload = self._valid_payload()
         response = self.client.post(self.CREATE_URL, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("non_field_errors", response.data)
 
     # 16. Tax Rate Boundary Error
     def test_max_tax_rate_rejected(self):
-        payload = self._valid_payload(cgst_rate="150.00")
+        payload = self._valid_payload(gst_rate="150.00")
         response = self.client.post(self.CREATE_URL, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("cgst_rate", response.data)
+        self.assertIn("gst_rate", response.data)
 
     # 17. Security: Client total spoofing
     def test_client_totals_ignored_and_recalculated(self):
@@ -992,7 +1007,7 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
 
     # 25. Filter by customer
     def test_filter_by_customer(self):
-        customer2 = Customer.objects.create(name="Customer 2")
+        customer2 = Customer.objects.create(name="Customer 2", state="Karnataka", state_code="29")
         self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-1"), format="json")
         self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-2", customer=customer2.pk), format="json")
 
@@ -1017,4 +1032,53 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
         resp = self.client.get("/api/invoices/?search=1234")
         self.assertEqual(resp.data["count"], 1)
         self.assertEqual(resp.data["results"][0]["invoice_number"], "SRC-001")
+
+
+class DashboardAPITest(AuthenticatedAPITestCase):
+
+    DASHBOARD_URL = "/api/dashboard/"
+
+    def test_dashboard_aggregation(self):
+        # Create some data
+        customer = Customer.objects.create(name="Customer 1", state="Karnataka", state_code="29")
+        business = BusinessProfile.objects.create(business_name="ABC", owner=self.user, address="123", gstin="29ABC")
+
+        Invoice.objects.create(
+            business=business,
+            customer=customer,
+            invoice_number="INV-1",
+            invoice_date="2026-08-01",
+            transaction_type="CASH",
+            total_amount=Decimal("1180.00"),
+            cgst_amount=Decimal("90.00"),
+            sgst_amount=Decimal("90.00"),
+            igst_amount=Decimal("0.00"),
+            taxable_amount=Decimal("1000.00"),
+            amount_in_words="One Thousand One Hundred Eighty"
+        )
+
+        Invoice.objects.create(
+            business=business,
+            customer=customer,
+            invoice_number="INV-2",
+            invoice_date="2026-08-02",
+            transaction_type="CREDIT",
+            total_amount=Decimal("590.00"),
+            cgst_amount=Decimal("0.00"),
+            sgst_amount=Decimal("0.00"),
+            igst_amount=Decimal("90.00"),
+            taxable_amount=Decimal("500.00"),
+            amount_in_words="Five Hundred Ninety"
+        )
+
+        resp = self.client.get(self.DASHBOARD_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        
+        data = resp.data
+        self.assertEqual(data["total_invoices"], 2)
+        self.assertEqual(data["total_sales"], Decimal("1770.00"))
+        self.assertEqual(data["gst_recorded"], Decimal("270.00"))
+        self.assertEqual(data["total_customers"], 1)
+        self.assertEqual(len(data["recent_invoices"]), 2)
+        self.assertTrue(data["business_profile_complete"])
 

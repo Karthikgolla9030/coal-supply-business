@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import FormField from '../components/FormField';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
+import { INDIAN_STATES, getStateCode } from '../utils/states';
 import {
   getCustomer,
   createCustomer,
@@ -12,10 +13,12 @@ import {
 } from '../api/customers';
 import { getInvoices, downloadInvoicePdf } from '../api/invoices';
 import { Link } from 'react-router-dom';
+import { FileText, ArrowLeft, Save, Edit2, CheckCircle, AlertCircle } from 'lucide-react';
 
 const EMPTY_FORM = {
   name: '',
   address: '',
+  gst_registered: false,
   gstin: '',
   state: '',
   state_code: '',
@@ -61,7 +64,7 @@ function CustomerInvoiceHistory({ customerId }) {
 
   if (loading && invoices.length === 0) return <div className="loading-state"><span className="spinner" /> Loading history...</div>;
   if (error) return <div className="alert alert-error">{error}</div>;
-  if (invoices.length === 0) return <EmptyState icon="📄" title="No invoices found" message="This customer has no invoice history." />;
+  if (invoices.length === 0) return <EmptyState icon={<FileText size={48} />} title="No invoices found" message="This customer has no invoice history." />;
 
   return (
     <div>
@@ -118,8 +121,18 @@ function CustomerForm({ onSaved }) {
   const [alert, setAlert] = useState(null);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    let val = type === 'checkbox' ? checked : value;
+    if (name === 'gst_registered') val = value === 'true';
+
+    if (name === 'state') {
+      const code = getStateCode(val);
+      setForm((p) => ({ ...p, state: val, state_code: code }));
+    } else if (name === 'gst_registered') {
+      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '' }));
+    } else {
+      setForm((p) => ({ ...p, [name]: val }));
+    }
     if (errors[name]) setErrors((p) => ({ ...p, [name]: undefined }));
   };
 
@@ -147,8 +160,8 @@ function CustomerForm({ onSaved }) {
   return (
     <div className="page-content">
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-        <button className="btn btn-secondary btn-sm" onClick={() => navigate('/customers')}>
-          ← Back
+        <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => navigate('/customers')}>
+          <ArrowLeft size={16} /> Back
         </button>
         <div>
           <h1 className="page-title">Add Customer</h1>
@@ -169,22 +182,60 @@ function CustomerForm({ onSaved }) {
             <FormField label="Customer Name" name="name" id="customer_name" required
               value={form.name} onChange={handleChange} error={errors.name}
               placeholder="e.g. ABC Traders" />
-            <FormField label="GSTIN" name="gstin" id="customer_gstin"
-              value={form.gstin} onChange={handleChange} error={errors.gstin}
-              placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15}
-              help="Leave blank for unregistered buyers" />
+              
+            <div className="form-field span-2">
+              <label>GST Registration *</label>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                  <input type="radio" name="gst_registered" value="true" checked={form.gst_registered === true} onChange={handleChange} />
+                  GST Registered
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                  <input type="radio" name="gst_registered" value="false" checked={form.gst_registered === false} onChange={handleChange} />
+                  Unregistered
+                </label>
+              </div>
+              <div className="help-text" style={{ marginTop: '0.25rem' }}>
+                {form.gst_registered ? "Select GST Registered only if the customer has a valid GST registration." : "No GSTIN is required for an unregistered customer."}
+              </div>
+            </div>
+
+            {form.gst_registered ? (
+              <FormField label="GSTIN *" name="gstin" id="customer_gstin" required
+                value={form.gstin} onChange={handleChange} error={errors.gstin}
+                placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
+            ) : (
+              <div className="form-field">
+                <label>GSTIN</label>
+                <input type="text" value="Not Applicable" disabled className="input disabled" />
+              </div>
+            )}
             <FormField label="Phone" name="phone" id="customer_phone" type="tel"
               value={form.phone} onChange={handleChange} error={errors.phone}
               placeholder="e.g. 9876543210" />
             <FormField label="Email" name="email" id="customer_email" type="email"
               value={form.email} onChange={handleChange} error={errors.email}
               placeholder="e.g. buyer@example.com" />
-            <FormField label="State" name="state" id="customer_state"
-              value={form.state} onChange={handleChange} error={errors.state}
-              placeholder="e.g. Karnataka" />
+            <div className="form-field">
+              <label htmlFor="customer_state">State</label>
+              <select
+                id="customer_state"
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+                className={`form-input ${errors.state ? 'error' : ''}`}
+              >
+                <option value="">-- Select State --</option>
+                {INDIAN_STATES.map((s) => (
+                  <option key={s.code} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {errors.state && <div className="error-msg">{errors.state}</div>}
+            </div>
             <FormField label="State Code" name="state_code" id="customer_state_code"
-              value={form.state_code} onChange={handleChange} error={errors.state_code}
-              placeholder="e.g. 29" maxLength={10} />
+              value={form.state_code} readOnly help="Derived automatically" />
             <div className="form-field span-2">
               <FormField label="Address" name="address" id="customer_address" as="textarea"
                 value={form.address} onChange={handleChange} error={errors.address}
@@ -198,7 +249,11 @@ function CustomerForm({ onSaved }) {
             Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={saving} id="save-customer-btn">
-            {saving ? <><span className="spinner" /> Saving…</> : '+ Save Customer'}
+            {saving ? (
+              <><span className="spinner" /> Saving…</>
+            ) : (
+              <><Save size={16} /> Save Customer</>
+            )}
           </button>
         </div>
       </form>
@@ -227,6 +282,7 @@ function CustomerDetail({ id }) {
         setForm({
           name:       res.data.name       ?? '',
           address:    res.data.address    ?? '',
+          gst_registered: res.data.gst_registered ?? false,
           gstin:      res.data.gstin      ?? '',
           state:      res.data.state      ?? '',
           state_code: res.data.state_code ?? '',
@@ -242,7 +298,12 @@ function CustomerDetail({ id }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    if (name === 'state') {
+      const code = getStateCode(value);
+      setForm((p) => ({ ...p, state: value, state_code: code }));
+    } else {
+      setForm((p) => ({ ...p, [name]: value }));
+    }
     if (errors[name]) setErrors((p) => ({ ...p, [name]: undefined }));
   };
 
@@ -307,7 +368,7 @@ function CustomerDetail({ id }) {
   if (!customer && !loading) return (
     <div className="page-content">
       <div className="alert alert-error">Customer not found.</div>
-      <button className="btn btn-secondary" onClick={() => navigate('/customers')}>← Back to Customers</button>
+      <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => navigate('/customers')}><ArrowLeft size={16} /> Back to Customers</button>
     </div>
   );
 
@@ -315,8 +376,8 @@ function CustomerDetail({ id }) {
     <div className="page-content">
       {/* Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-        <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.3rem' }} onClick={() => navigate('/customers')}>
-          ← Back
+        <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => navigate('/customers')}>
+          <ArrowLeft size={16} /> Back
         </button>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
@@ -328,15 +389,16 @@ function CustomerDetail({ id }) {
           </p>
         </div>
         {!editing && (
-          <button className="btn btn-secondary" id="edit-customer-btn" onClick={() => { setEditing(true); setAlert(null); }}>
-            ✏️ Edit
+          <button className="btn btn-secondary" id="edit-customer-btn" onClick={() => { setEditing(true); setAlert(null); }} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <Edit2 size={16} /> Edit
           </button>
         )}
       </div>
 
       {alert && (
         <div className={`alert alert-${alert.type}`}>
-          {alert.type === 'success' ? '✓' : '✕'} {alert.message}
+          {alert.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+          <span>{alert.message}</span>
         </div>
       )}
 
@@ -347,11 +409,50 @@ function CustomerDetail({ id }) {
             <div className="card-title">Edit Customer</div>
             <div className="form-grid">
               <FormField label="Customer Name" name="name" id="edit_name" required value={form.name} onChange={handleChange} error={errors.name} />
-              <FormField label="GSTIN" name="gstin" id="edit_gstin" value={form.gstin} onChange={handleChange} error={errors.gstin} maxLength={15} />
+              
+              <div className="form-field span-2">
+                <label>GST Registration *</label>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                    <input type="radio" name="gst_registered" value="true" checked={form.gst_registered === true} onChange={handleChange} />
+                    GST Registered
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
+                    <input type="radio" name="gst_registered" value="false" checked={form.gst_registered === false} onChange={handleChange} />
+                    Unregistered
+                  </label>
+                </div>
+              </div>
+
+              {form.gst_registered ? (
+                <FormField label="GSTIN *" name="gstin" id="edit_gstin" required value={form.gstin} onChange={handleChange} error={errors.gstin} maxLength={15} />
+              ) : (
+                <div className="form-field">
+                  <label>GSTIN</label>
+                  <input type="text" value="Not Applicable" disabled className="input disabled" />
+                </div>
+              )}
               <FormField label="Phone" name="phone" id="edit_phone" type="tel" value={form.phone} onChange={handleChange} error={errors.phone} />
               <FormField label="Email" name="email" id="edit_email" type="email" value={form.email} onChange={handleChange} error={errors.email} />
-              <FormField label="State" name="state" id="edit_state" value={form.state} onChange={handleChange} error={errors.state} />
-              <FormField label="State Code" name="state_code" id="edit_state_code" value={form.state_code} onChange={handleChange} error={errors.state_code} maxLength={10} />
+              <div className="form-field">
+                <label htmlFor="edit_state">State</label>
+                <select
+                  id="edit_state"
+                  name="state"
+                  value={form.state}
+                  onChange={handleChange}
+                  className={errors.state ? 'error' : ''}
+                >
+                  <option value="">-- Select State --</option>
+                  {INDIAN_STATES.map((s) => (
+                    <option key={s.code} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.state && <div className="error-msg">{errors.state}</div>}
+              </div>
+              <FormField label="State Code" name="state_code" id="edit_state_code" value={form.state_code} readOnly help="Derived automatically" />
               <div className="form-field span-2">
                 <FormField label="Address" name="address" id="edit_address" as="textarea" value={form.address} onChange={handleChange} error={errors.address} />
               </div>
@@ -362,7 +463,7 @@ function CustomerDetail({ id }) {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving} id="save-edit-customer-btn">
-              {saving ? <><span className="spinner" /> Saving…</> : '💾 Save Changes'}
+              {saving ? <><span className="spinner" /> Saving…</> : <><Save size={16} /> Save Changes</>}
             </button>
           </div>
         </form>
@@ -372,12 +473,14 @@ function CustomerDetail({ id }) {
             <div className="card-title">Customer Information</div>
             {[
               ['Name', customer.name],
-              ['GSTIN', customer.gstin],
-              ['Phone', customer.phone],
-              ['Email', customer.email],
-              ['State', customer.state],
-              ['State Code', customer.state_code],
-              ['Address', customer.address],
+              ['Status', <StatusBadge active={customer.is_active} />],
+              ['GST Status', customer.gst_registered ? 'GST Registered' : 'Unregistered'],
+              ['GSTIN', customer.gst_registered ? customer.gstin : 'Not Applicable'],
+              ['Phone', customer.phone || '—'],
+              ['Email', customer.email || '—'],
+              ['State', customer.state || '—'],
+              ['State Code', customer.state_code || '—'],
+              ['Address', customer.address || '—'],
             ].map(([label, value]) => (
               <div className="detail-row" key={label}>
                 <span className="detail-label">{label}</span>

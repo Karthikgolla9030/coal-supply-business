@@ -10,130 +10,162 @@
         }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 11pt;
-            color: #333333;
-            line-height: 1.4;
+            font-size: 10pt;
+            color: #2c3e50;
+            line-height: 1.5;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .bold { font-weight: bold; }
         
+        /* ── Header ── */
         .header {
             text-align: center;
-            border-bottom: 2px solid #333333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            border-bottom: 3px solid #34495e;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
         }
         .header h1 {
-            font-size: 18pt;
-            margin: 0;
+            font-size: 22pt;
+            margin: 0 0 5px 0;
             text-transform: uppercase;
+            color: #2c3e50;
+            letter-spacing: 1px;
         }
         .header p {
             margin: 2px 0;
-            font-size: 10pt;
+            font-size: 10.5pt;
+            color: #555555;
         }
         
+        /* ── Title Bar ── */
         .title-bar {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         .title-bar h2 {
-            display: inline;
-            border: 1px solid #777777;
-            padding: 5px 15px;
+            display: inline-block;
+            background-color: #34495e;
+            color: #ffffff;
+            padding: 8px 25px;
             font-size: 14pt;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            margin: 0;
         }
 
+        /* ── Info Grid ── */
         .info-grid {
             width: 100%;
-            margin-bottom: 15px;
-            border: 1px solid #cccccc;
-            background-color: #f9f9f9;
+            margin-bottom: 20px;
+            border-collapse: collapse;
         }
         .info-grid td {
-            padding: 8px;
+            padding: 12px;
             vertical-align: top;
             width: 50%;
+            border: 1px solid #e0e0e0;
+            background-color: #fafbfc;
         }
         
+        /* ── Receiver ── */
         .receiver {
-            border: 1px solid #cccccc;
-            padding: 10px;
-            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin-bottom: 20px;
+            background-color: #ffffff;
         }
         .receiver h3 {
-            margin: 0 0 5px 0;
+            margin: 0 0 8px 0;
             font-size: 11pt;
-            border-bottom: 1px solid #dddddd;
-            padding-bottom: 5px;
+            color: #34495e;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 6px;
+            text-transform: uppercase;
         }
         
+        /* ── Items Table ── */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        .items-table th, .items-table td {
-            border: 1px solid #cccccc;
-            padding: 6px;
-        }
-        .items-table th {
-            background-color: #f1f1f1;
-            font-weight: bold;
-            text-align: center;
-        }
-        
-        .summary-table {
-            width: 40%;
-            float: right;
-            border-collapse: collapse;
             margin-bottom: 20px;
         }
+        .items-table th, .items-table td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 8px;
+        }
+        .items-table th {
+            background-color: #34495e;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            font-size: 10.5pt;
+        }
+        .items-table td {
+            font-size: 10pt;
+        }
+        
+        /* ── Summary Table ── */
+        .summary-table {
+            width: 45%;
+            float: right;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
         .summary-table td {
-            padding: 5px;
-            border-bottom: 1px solid #eeeeee;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ecf0f1;
         }
         .summary-table .grand-total {
             font-weight: bold;
-            font-size: 12pt;
-            background-color: #f9f9f9;
-            border-top: 1px solid #cccccc;
-            border-bottom: none;
+            font-size: 13pt;
+            background-color: #f1c40f;
+            color: #2c3e50;
+            border-top: 2px solid #34495e;
         }
         
+        /* ── Amount in Words ── */
         .amount-words {
             clear: both;
-            border: 1px solid #cccccc;
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 20px;
+            border-left: 4px solid #34495e;
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            margin-bottom: 30px;
+            font-size: 11pt;
         }
         
+        /* ── Footer ── */
         .footer-grid {
             width: 100%;
-            border-top: 2px solid #333333;
+            border-top: 2px solid #34495e;
             padding-top: 15px;
         }
         .footer-grid td {
-            vertical-align: bottom;
+            vertical-align: top;
             width: 50%;
         }
         .bank-details h4, .terms h4 {
-            margin: 0 0 5px 0;
-            text-decoration: underline;
+            margin: 0 0 6px 0;
             font-size: 10pt;
+            color: #34495e;
+            text-transform: uppercase;
         }
         .bank-details p, .terms p {
-            margin: 2px 0;
-            font-size: 9pt;
+            margin: 3px 0;
+            font-size: 9.5pt;
+            color: #555;
         }
         .signature {
             text-align: right;
         }
         .signature-space {
-            height: 60px;
+            height: 70px;
+        }
+        .auth-sign {
+            font-weight: bold;
+            border-top: 1px dashed #7f8c8d;
+            padding-top: 5px;
+            display: inline-block;
         }
     </style>
 </head>
@@ -177,7 +209,7 @@
         <div><span class="bold">Name:</span> {{ customer.name }}</div>
         {% if customer.address %}<div><span class="bold">Address:</span> {{ customer.address }}</div>{% endif %}
         <div>
-            {% if customer.gstin %}<span class="bold">GSTIN:</span> {{ customer.gstin }}{% endif %}
+            <span class="bold">GSTIN:</span> {% if customer.gst_registered %}{{ customer.gstin }}{% else %}Not Registered{% endif %}
             {% if customer.state %}&nbsp;&nbsp;&nbsp;<span class="bold">State:</span> {{ customer.state }}{% endif %}
             {% if customer.state_code %}&nbsp;&nbsp;&nbsp;<span class="bold">State Code:</span> {{ customer.state_code }}{% endif %}
         </div>
@@ -224,17 +256,34 @@
             <td>CGST @ {{ invoice.cgst_rate }}%</td>
             <td class="text-right">{{ invoice.cgst_amount|floatformat:2 }}</td>
         </tr>
+        {% else %}
+        <tr>
+            <td>CGST</td>
+            <td class="text-right">—</td>
+        </tr>
         {% endif %}
+        
         {% if invoice.sgst_amount > 0 %}
         <tr>
             <td>SGST @ {{ invoice.sgst_rate }}%</td>
             <td class="text-right">{{ invoice.sgst_amount|floatformat:2 }}</td>
         </tr>
+        {% else %}
+        <tr>
+            <td>SGST</td>
+            <td class="text-right">—</td>
+        </tr>
         {% endif %}
+        
         {% if invoice.igst_amount > 0 %}
         <tr>
             <td>IGST @ {{ invoice.igst_rate }}%</td>
             <td class="text-right">{{ invoice.igst_amount|floatformat:2 }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td>IGST</td>
+            <td class="text-right">—</td>
         </tr>
         {% endif %}
         {% if invoice.tcs_amount > 0 %}
@@ -279,7 +328,7 @@
             <td class="signature">
                 <p>For <span class="bold">{{ business.business_name }}</span></p>
                 <div class="signature-space"></div>
-                <p>Authorized Signatory</p>
+                <p class="auth-sign">Authorized Signatory</p>
             </td>
         </tr>
     </table>

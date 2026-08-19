@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { getCustomers } from '../api/customers';
+import { Search, Users, Plus } from 'lucide-react';
 
 function useDebounce(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -67,14 +68,14 @@ export default function CustomersPage() {
           id="add-customer-btn"
           onClick={() => navigate('/customers/new')}
         >
-          + Add Customer
+          <Plus size={16} /> Add Customer
         </button>
       </div>
 
       {/* Toolbar */}
       <div className="toolbar">
         <div className="search-bar">
-          <span className="search-bar-icon">🔍</span>
+          <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="customer-search"
             className="form-input"
@@ -111,7 +112,7 @@ export default function CustomersPage() {
       {/* Table */}
       {!loading && !error && customers.length === 0 && (
         <EmptyState
-          icon="👥"
+          icon={<Users size={48} />}
           title="No customers found"
           message={
             search
@@ -121,7 +122,7 @@ export default function CustomersPage() {
           action={
             !search && (
               <button className="btn btn-primary" onClick={() => navigate('/customers/new')}>
-                + Add Customer
+                <Plus size={16} /> Add Customer
               </button>
             )
           }

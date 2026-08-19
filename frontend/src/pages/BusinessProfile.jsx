@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import FormField from '../components/FormField';
 import { getBusinessProfile, saveBusinessProfile } from '../api/businessProfile';
+import { INDIAN_STATES, getStateCode } from '../utils/states';
+import { CheckCircle, AlertCircle, Save, Cloud } from 'lucide-react';
 
 const INITIAL_FORM = {
   business_name: '',
@@ -64,9 +66,38 @@ export default function BusinessProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Load Google Drive Status ────────────────────────────────
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [checkingDrive, setCheckingDrive] = useState(true);
+
+  useEffect(() => {
+    // Check URL parameters for OAuth callbacks
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('drive') === 'connected') {
+      setAlert({ type: 'success', message: 'Google Drive connected successfully!' });
+      // Remove query param without refreshing
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('drive') === 'error') {
+      setAlert({ type: 'error', message: 'Google Drive connection failed. Please try again.' });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    import('../api/client').then(({ default: client }) => {
+      client.get('/google-drive/status/')
+        .then(res => setDriveConnected(res.data.connected))
+        .catch(err => console.error("Drive status check failed", err))
+        .finally(() => setCheckingDrive(false));
+    });
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === 'state') {
+      const code = getStateCode(value);
+      setForm((prev) => ({ ...prev, state: value, state_code: code }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
     // Clear individual field error when user types
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
@@ -117,7 +148,8 @@ export default function BusinessProfilePage() {
 
       {alert && (
         <div className={`alert alert-${alert.type}`}>
-          {alert.type === 'success' ? '✓' : '✕'} {alert.message}
+          {alert.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+          <span>{alert.message}</span>
         </div>
       )}
 
@@ -178,24 +210,31 @@ export default function BusinessProfilePage() {
               placeholder="Full business address"
               className="form-field span-2"
             />
-            <FormField
-              label="State"
-              name="state"
-              id="state"
-              value={form.state}
-              onChange={handleChange}
-              error={errors.state}
-              placeholder="e.g. Karnataka"
-            />
+            <div className="form-field">
+              <label htmlFor="state">State</label>
+              <select
+                id="state"
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+                className={errors.state ? 'error' : ''}
+              >
+                <option value="">-- Select State --</option>
+                {INDIAN_STATES.map((s) => (
+                  <option key={s.code} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {errors.state && <div className="error-msg">{errors.state}</div>}
+            </div>
             <FormField
               label="State Code"
               name="state_code"
               id="state_code"
               value={form.state_code}
-              onChange={handleChange}
-              error={errors.state_code}
-              placeholder="e.g. 29"
-              maxLength={10}
+              readOnly
+              help="Derived automatically"
             />
           </div>
         </div>
@@ -263,6 +302,68 @@ export default function BusinessProfilePage() {
           </div>
         </div>
 
+        {/* ── Google Drive Integration ───────────────────────── */}
+        <div className="card premium-card glass-panel animate-slide-up" style={{ marginTop: 'var(--space-6)', border: '1px solid var(--color-primary-soft)' }}>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Cloud className="glow-icon" style={{ color: 'var(--color-primary)' }} size={24} /> 
+            <span>Google Drive Integration</span>
+          </div>
+          <div style={{ padding: 'var(--space-4) 0 var(--space-2)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {checkingDrive ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', color: 'var(--color-text-muted)' }}>
+                <span className="spinner"></span> Checking Drive status...
+              </div>
+            ) : driveConnected ? (
+              <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-success-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', color: 'var(--color-success)', marginBottom: 'var(--space-2)' }}>
+                  <CheckCircle size={22} className="glow-icon" />
+                  <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Connected & Active</span>
+                </div>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', marginBottom: 'var(--space-4)', lineHeight: '1.5' }}>
+                  Your Google Drive is successfully linked. Invoice PDFs generated by this business profile will be automatically saved to your securely encrypted "Coal Invoices" folder.
+                </p>
+                <button 
+                  type="button"
+                  onClick={async () => {
+                    import('../api/client').then(({ default: client }) => {
+                      client.get('/google-drive/oauth/start/')
+                        .then(res => { window.location.href = res.data.url; })
+                        .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
+                    });
+                  }}
+                  className="btn" 
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-bg)' }}
+                >
+                  <Cloud size={16} /> Connect a Different Account
+                </button>
+              </div>
+            ) : (
+              <div style={{ background: 'var(--color-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                <p style={{ color: 'var(--color-text)', fontSize: '1rem', fontWeight: '500', marginBottom: 'var(--space-2)' }}>
+                  Securely Backup Your Invoices
+                </p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', marginBottom: 'var(--space-4)', lineHeight: '1.5' }}>
+                  Connect your Google Drive to automatically organize and save your invoice PDFs in a dedicated folder. You retain complete ownership of your data.
+                </p>
+                <button 
+                  type="button"
+                  onClick={async () => {
+                    import('../api/client').then(({ default: client }) => {
+                      client.get('/google-drive/oauth/start/')
+                        .then(res => { window.location.href = res.data.url; })
+                        .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
+                    });
+                  }}
+                  className="btn btn-primary" 
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontSize: '1rem', boxShadow: '0 4px 12px var(--color-primary-soft)' }}
+                >
+                  <Cloud size={20} /> Connect Google Drive
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* ── Submit ───────────────────────────────────────── */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
           <button
@@ -274,7 +375,7 @@ export default function BusinessProfilePage() {
             {saving ? (
               <><span className="spinner" /> Saving…</>
             ) : (
-              <>💾 Save Changes</>
+              <><Save size={18} /> Save Changes</>
             )}
           </button>
         </div>

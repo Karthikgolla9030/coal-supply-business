@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { getInvoices, downloadInvoicePdf } from '../api/invoices';
 import { getCustomers } from '../api/customers';
+import { Search, Plus, FilterX, Download, Eye, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import EmptyState from '../components/EmptyState';
 
 export default function InvoiceList() {
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ export default function InvoiceList() {
   // Fetch customers for the dropdown filter
   useEffect(() => {
     getCustomers()
-      .then(res => setCustomers(res.data))
+      .then(res => setCustomers(res.data.results || res.data || []))
       .catch(err => console.error('Failed to load customers for filter', err));
   }, []);
 
@@ -32,8 +34,8 @@ export default function InvoiceList() {
       try {
         const params = Object.fromEntries(searchParams.entries());
         const response = await getInvoices(params);
-        setInvoices(response.data.results);
-        setCount(response.data.count);
+        setInvoices(response.data.results || response.data || []);
+        setCount(response.data.count || (Array.isArray(response.data) ? response.data.length : 0));
       } catch (err) {
         setError('Unable to load invoices. Please try again.');
       } finally {
@@ -121,36 +123,39 @@ export default function InvoiceList() {
   
   return (
     <div className="page-content" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>Invoices</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
+        <h1 className="page-title">Invoices</h1>
         <button 
           className="btn btn-primary" 
           onClick={() => navigate('/invoices/create')}
         >
-          + New Invoice
+          <Plus size={16} /> New Invoice
         </button>
       </div>
 
-      <div style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-5)' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
           
           {/* Search */}
           <div style={{ flex: '1 1 250px' }}>
             <label className="form-label">Search</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="Invoice no, customer, GSTIN, vehicle..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
+            <div className="search-bar mt-2">
+              <span className="search-bar-icon"><Search size={16} /></span>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Invoice no, customer..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Customer Filter */}
           <div style={{ flex: '1 1 200px' }}>
             <label className="form-label">Customer</label>
             <select 
-              className="form-control" 
+              className="form-input mt-2" 
               value={searchParams.get('customer') || ''}
               onChange={(e) => updateFilter('customer', e.target.value)}
             >
@@ -166,7 +171,7 @@ export default function InvoiceList() {
             <label className="form-label">Date From</label>
             <input 
               type="date" 
-              className="form-control" 
+              className="form-input mt-2" 
               value={searchParams.get('date_from') || ''}
               onChange={(e) => updateFilter('date_from', e.target.value)}
             />
@@ -177,7 +182,7 @@ export default function InvoiceList() {
             <label className="form-label">Date To</label>
             <input 
               type="date" 
-              className="form-control" 
+              className="form-input mt-2" 
               value={searchParams.get('date_to') || ''}
               onChange={(e) => updateFilter('date_to', e.target.value)}
             />
@@ -187,7 +192,7 @@ export default function InvoiceList() {
           <div style={{ flex: '1 1 150px' }}>
             <label className="form-label">Transaction Type</label>
             <select 
-              className="form-control"
+              className="form-input mt-2"
               value={searchParams.get('transaction_type') || ''}
               onChange={(e) => updateFilter('transaction_type', e.target.value)}
             >
@@ -204,92 +209,76 @@ export default function InvoiceList() {
               onClick={handleClearFilters}
               disabled={!hasFilters && searchInput === ''}
             >
-              Clear Filters
+              <FilterX size={16} /> Clear Filters
             </button>
           </div>
         </div>
       </div>
 
       {error ? (
-        <div style={{ textAlign: 'center', color: 'red', margin: '3rem 0' }}>
-          <h4>Error</h4>
-          <p>{error}</p>
-          <button className="btn btn-secondary" onClick={() => updateFilter('retry', Date.now().toString())}>Try Again</button>
-        </div>
+        <div className="alert alert-error">{error}</div>
       ) : loading ? (
-        <div style={{ textAlign: 'center', margin: '3rem 0' }}>
-          <p>Loading invoices...</p>
+        <div className="loading-state">
+          <div className="spinner" style={{ margin: '0 auto var(--space-4)' }} />
+          Loading invoices…
         </div>
       ) : count === 0 ? (
-        <div style={{ textAlign: 'center', margin: '4rem 0', backgroundColor: '#fff', padding: '3rem', borderRadius: '8px' }}>
-          {hasFilters ? (
-            <>
-              <h4>No invoices found.</h4>
-              <p>Try changing your search or filters.</p>
-              <button className="btn btn-secondary mt-3" onClick={handleClearFilters}>Clear Filters</button>
-            </>
-          ) : (
-            <>
-              <h4>No invoices yet.</h4>
-              <p>Create your first invoice to start keeping digital records.</p>
-              <button className="btn btn-primary mt-3" onClick={() => navigate('/invoices/create')}>+ Create Invoice</button>
-            </>
-          )}
-        </div>
+        <EmptyState
+          icon={<FileText size={48} />}
+          title={hasFilters ? "No invoices found" : "No invoices yet"}
+          message={hasFilters ? "Try changing your search or filters." : "Create your first invoice to start keeping digital records."}
+          action={
+            hasFilters 
+              ? <button className="btn btn-secondary" onClick={handleClearFilters}>Clear Filters</button>
+              : <button className="btn btn-primary" onClick={() => navigate('/invoices/create')}><Plus size={16} /> Create Invoice</button>
+          }
+        />
       ) : (
         <>
-          <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="table-wrapper">
+            <table>
               <thead>
-                <tr style={{ borderBottom: '2px solid #edf2f7', backgroundColor: '#f8fafc', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem' }}>Invoice</th>
-                  <th style={{ padding: '1rem' }}>Date</th>
-                  <th style={{ padding: '1rem' }}>Customer</th>
-                  <th style={{ padding: '1rem' }}>Vehicle</th>
-                  <th style={{ padding: '1rem' }}>Type</th>
-                  <th style={{ padding: '1rem' }}>Total</th>
-                  <th style={{ padding: '1rem', textAlign: 'center' }}>Drive</th>
-                  <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Date</th>
+                  <th>Customer</th>
+                  <th>Vehicle</th>
+                  <th>Type</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
+                  <th style={{ textAlign: 'center' }}>Drive</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                    <td style={{ padding: '1rem' }}><strong>{inv.invoice_number}</strong></td>
-                    <td style={{ padding: '1rem' }}>
+                  <tr key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)}>
+                    <td><strong>{inv.invoice_number}</strong></td>
+                    <td style={{ color: 'var(--color-text-muted)' }}>
                       {new Date(inv.invoice_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
                     </td>
-                    <td style={{ padding: '1rem' }}>{inv.customer?.name || 'Unknown Customer'}</td>
-                    <td style={{ padding: '1rem' }}>{inv.vehicle_number || '-'}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{ 
-                        padding: '0.2rem 0.5rem', 
-                        borderRadius: '4px', 
-                        fontSize: '0.8rem',
-                        backgroundColor: inv.transaction_type === 'CASH' ? '#c6f6d5' : '#bee3f8',
-                        color: inv.transaction_type === 'CASH' ? '#22543d' : '#2a4365'
-                      }}>
+                    <td style={{ color: 'var(--color-text-muted)' }}>{inv.customer?.name || 'Unknown Customer'}</td>
+                    <td style={{ color: 'var(--color-text-muted)' }}>{inv.vehicle_number || '-'}</td>
+                    <td>
+                      <span className={inv.transaction_type === 'CASH' ? 'badge badge-active' : 'badge badge-inactive'}>
                         {inv.transaction_type}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem' }}>{formatAmount(inv.total_amount)}</td>
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <td style={{ fontWeight: 500 }}>{formatAmount(inv.total_amount)}</td>
+                    <td style={{ textAlign: 'center' }}>
                       {inv.google_drive_status === 'UPLOADED' ? (
-                        <span title="Uploaded to Google Drive" style={{ color: '#38a169', fontSize: '1.2rem' }}>✓</span>
+                        <CheckCircle2 size={18} style={{ color: 'var(--color-success)', margin: '0 auto' }} title="Uploaded to Google Drive" />
                       ) : inv.google_drive_status === 'FAILED' ? (
-                        <span title="Upload Failed" style={{ color: '#e53e3e', fontSize: '1.2rem' }}>✗</span>
+                        <XCircle size={18} style={{ color: 'var(--color-danger)', margin: '0 auto' }} title="Upload Failed" />
                       ) : (
-                        <span title="Not Uploaded" style={{ color: '#a0aec0', fontSize: '1.2rem' }}>-</span>
+                        <Clock size={18} style={{ color: 'var(--color-text-faint)', margin: '0 auto' }} title="Not Uploaded" />
                       )}
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <Link to={`/invoices/${inv.id}`} className="btn btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.9rem', marginRight: '0.5rem' }}>View</Link>
+                    <td style={{ textAlign: 'right' }}>
                       <button 
-                        className="btn btn-primary" 
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.9rem' }}
-                        onClick={() => handleDownloadPdf(inv.id, inv.invoice_number)}
+                        className="btn btn-secondary btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); handleDownloadPdf(inv.id, inv.invoice_number); }}
                       >
-                        PDF
+                        <Download size={14} /> PDF
                       </button>
                     </td>
                   </tr>
@@ -298,10 +287,10 @@ export default function InvoiceList() {
             </table>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
-            <p style={{ color: '#718096' }}>
+          <div className="pagination">
+            <span className="pagination-info">
               Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, count)} of {count}
-            </p>
+            </span>
             <div style={{ display: 'flex', gap: '0.25rem' }}>
               <button 
                 className="btn btn-secondary" 

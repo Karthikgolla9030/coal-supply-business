@@ -6,13 +6,16 @@
 
 /* ── Design tokens ──────────────────────────────────────────── */
 :root {
-  /* Colours */
-  --color-bg:           #0f1117;
-  --color-surface:      #1a1d27;
-  --color-surface-2:    #22263a;
-  --color-border:       #2e3250;
-  --color-border-light: #3a3f5c;
-
+  /* Colours - SaaS Polish */
+  --color-bg:           #0B0D12;
+  --color-surface:      #151922;
+  --color-surface-2:    #191D27; /* Elevated card / hover state */
+  --color-sidebar:      #11141B;
+  --color-input:        #10131A;
+  
+  --color-border:       #272D3A;
+  --color-border-light: #3A4356;
+  
   --color-primary:      #6366f1;
   --color-primary-hover:#4f52d4;
   --color-primary-soft: rgba(99,102,241,0.12);
@@ -24,9 +27,9 @@
   --color-warning:      #f59e0b;
   --color-warning-soft: rgba(245,158,11,0.12);
 
-  --color-text:         #e2e4f0;
-  --color-text-muted:   #8b90b0;
-  --color-text-faint:   #4d5378;
+  --color-text:         #F5F7FA; /* Primary text */
+  --color-text-muted:   #AEB6C5; /* Secondary text */
+  --color-text-faint:   #7F899B; /* Muted text */
 
   /* Spacing */
   --space-1: 0.25rem;
@@ -113,7 +116,7 @@ a:hover { color: var(--color-primary-hover); }
   left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--color-surface);
+  background: var(--color-sidebar);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -152,7 +155,7 @@ a:hover { color: var(--color-primary-hover); }
   color: var(--color-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: var(--space-3) var(--space-3) var(--space-2);
+  padding: var(--space-4) var(--space-3) var(--space-2);
 }
 
 .sidebar-link {
@@ -196,7 +199,7 @@ a:hover { color: var(--color-primary-hover); }
   position: sticky;
   top: 0;
   height: var(--topbar-height);
-  background: var(--color-surface);
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -291,8 +294,9 @@ a:hover { color: var(--color-primary-hover); }
 }
 
 .form-input,
-.form-textarea {
-  background: var(--color-bg);
+.form-textarea,
+select.form-control {
+  background: var(--color-input);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -304,13 +308,18 @@ a:hover { color: var(--color-primary-hover); }
   width: 100%;
 }
 
-.form-input:hover, .form-textarea:hover {
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--color-text-faint);
+}
+
+.form-input:hover, .form-textarea:hover, select.form-control:hover {
   border-color: var(--color-border-light);
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus, .form-textarea:focus, select.form-control:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 .form-input.error, .form-textarea.error {
@@ -684,3 +693,45 @@ tbody tr:hover {
 .font-semibold { font-weight: 600; }
 .text-danger { color: var(--color-danger); }
 .w-full { width: 100%; }
+
+/* ── Premium UI Additions ──────────────────────────────────────── */
+.premium-card {
+  background: linear-gradient(145deg, var(--color-surface), var(--color-surface-2));
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  border-color: var(--color-primary-soft);
+}
+
+.glass-panel {
+  background: rgba(21, 25, 34, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glow-icon {
+  filter: drop-shadow(0 0 8px var(--color-primary-soft));
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
