@@ -508,6 +508,9 @@ class InvoiceItem(models.Model):
             ),
         ]
 
+    def __str__(self):
+        return f"{self.product_name} ({self.quantity} {self.unit})"
+
     def _calculate_total_tax(self):
         return self.cgst_amount + self.sgst_amount + self.igst_amount
 
@@ -552,6 +555,15 @@ class LedgerEntry(models.Model):
         max_length=255, 
         blank=True, 
         help_text="Name of the party if not a registered customer (e.g., external supplier or transporter)."
+    )
+    
+    invoice = models.OneToOneField(
+        'Invoice',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="ledger_entry",
+        help_text="The invoice that generated this ledger entry (if applicable)."
     )
     
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)

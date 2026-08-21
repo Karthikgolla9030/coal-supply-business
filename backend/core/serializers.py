@@ -479,6 +479,19 @@ class InvoiceCreateSerializer(serializers.Serializer):
         ]
         InvoiceItem.objects.bulk_create(item_objects)
 
+        # ── Automatic Ledger Integration ──────────────────────
+        # Only create a ledger entry if this is a standard invoice (sales = receivable).
+        # We ensure exactly one ledger entry per invoice using the OneToOneField relationship.
+        LedgerEntry.objects.create(
+            business=business,
+            customer=customer,
+            invoice=invoice,
+            transaction_type='RECEIVABLE',
+            amount=totals.total_amount,
+            reference=f"Invoice {invoice.invoice_number}",
+            status='PENDING'
+        )
+
         return invoice
 
 
@@ -517,6 +530,7 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     items    = InvoiceItemReadSerializer(many=True, read_only=True)
     business = BusinessProfileSerializer(read_only=True)
     customer = CustomerDetailSerializer(read_only=True)
+    ledger_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -549,8 +563,20 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "items",
             "created_at",
             "updated_at",
+            "ledger_status",
         ]
         read_only_fields = fields
+
+    def get_ledger_status(self, obj):
+        if hasattr(obj, 'ledger_entry') and obj.ledger_entry:
+            return {
+                "id": obj.ledger_entry.id,
+                "amount": obj.ledger_entry.amount,
+                "paid_amount": obj.ledger_entry.get_paid_amount(),
+                "remaining_amount": obj.ledger_entry.get_remaining_amount(),
+                "status": obj.ledger_entry.status,
+            }
+        return None
 
 
 # ─────────────────────────────────────────────────────────────
@@ -592,6 +618,7 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
             'paid_amount',
             'remaining_amount',
             'payments',
+            'invoice',
             'created_at',
             'updated_at',
         ]

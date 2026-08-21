@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Wallet } from 'lucide-react';
+import { X, Calendar, Wallet, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ledgerApi } from '../../api/ledger';
 
 export default function EntryDetailsModal({ isOpen, onClose, ledgerEntry, onRecordPaymentClick }) {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen && ledgerEntry) {
@@ -102,6 +104,20 @@ export default function EntryDetailsModal({ isOpen, onClose, ledgerEntry, onReco
 
           {(ledgerEntry.reference || ledgerEntry.notes) && (
             <div style={{ marginBottom: '2rem' }}>
+              {ledgerEntry.invoice && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <button 
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      onClose();
+                      navigate(`/invoices/${ledgerEntry.invoice}`);
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    <FileText size={16} /> View Original Invoice
+                  </button>
+                </div>
+              )}
               {ledgerEntry.reference && (
                 <div style={{ marginBottom: '0.5rem' }}>
                   <span style={{ fontWeight: '500', marginRight: '0.5rem' }}>Reference:</span>
