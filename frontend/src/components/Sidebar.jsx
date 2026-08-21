@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, FileText, FilePlus, Users, Building, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, FilePlus, Users, Building, LogOut, Wallet } from 'lucide-react';
 
 const navItems = [
   {
@@ -21,6 +21,12 @@ const navItems = [
     links: [
       { to: '/customers', label: 'Customers', icon: Users },
       { to: '/business-profile', label: 'Business Profile', icon: Building },
+    ],
+  },
+  {
+    group: 'Finance',
+    links: [
+      { to: '/ledger', label: 'Money & Ledger', icon: Wallet },
     ],
   },
 ];

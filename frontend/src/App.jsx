@@ -11,6 +11,7 @@ import InvoiceDetail from './pages/InvoiceDetail';
 import InvoiceList from './pages/InvoiceList';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Ledger from './pages/Ledger';
 
 // Layout wrapper for protected pages that need the sidebar
 function AppLayout({ children }) {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/invoices" element={<ProtectedRoute><AppLayout><InvoiceList /></AppLayout></ProtectedRoute>} />
           <Route path="/invoices/new" element={<ProtectedRoute><AppLayout><InvoiceNew /></AppLayout></ProtectedRoute>} />
           <Route path="/invoices/:id" element={<ProtectedRoute><AppLayout><InvoiceDetail /></AppLayout></ProtectedRoute>} />
+          <Route path="/ledger" element={<ProtectedRoute><AppLayout><Ledger /></AppLayout></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
