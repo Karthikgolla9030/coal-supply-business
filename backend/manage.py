@@ -5,9 +5,22 @@ import os
 import sys
 
 
+def _patch_django_context_copy():
+    try:
+        from django.template.context import Context
+        def custom_copy(self):
+            duplicate = type(self)()
+            duplicate.dicts = self.dicts[:]
+            return duplicate
+        Context.__copy__ = custom_copy
+    except ImportError:
+        pass
+
+
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    _patch_django_context_copy()
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

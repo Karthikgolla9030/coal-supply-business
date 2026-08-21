@@ -86,6 +86,12 @@ class BusinessProfile(models.Model):
     address = models.TextField(blank=True, default="")
     state = models.CharField(max_length=100, blank=True, default="")
     state_code = models.CharField(max_length=10, blank=True, default="")
+    pincode = models.CharField(
+        max_length=6,
+        blank=True,
+        null=True,
+        help_text="6-digit Indian Pincode",
+    )
 
     # Bank details printed on invoice footer
     bank_name = models.CharField(max_length=100, blank=True, default="")
@@ -161,6 +167,27 @@ class Customer(models.Model):
         default="",
         db_index=True,
         help_text="GST Identification Number — optional for unregistered buyers",
+    )
+    
+    # ── GST Verification Cache ────────────────────────────────
+    gst_verified = models.BooleanField(
+        default=False,
+        help_text="Whether this GSTIN has been successfully verified with the GST API",
+    )
+    gst_verified_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="When the GST verification was performed",
+    )
+    gst_status = models.CharField(max_length=50, blank=True, default="")
+    gst_legal_name = models.CharField(max_length=255, blank=True, default="")
+    gst_trade_name = models.CharField(max_length=255, blank=True, default="")
+
+    aadhaar_no = models.CharField(
+        max_length=12,
+        blank=True,
+        default="",
+        help_text="Aadhaar Number — alternative identification for unregistered buyers",
     )
     state = models.CharField(max_length=100, blank=True, default="")
     state_code = models.CharField(max_length=10, blank=True, default="")

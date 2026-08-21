@@ -47,6 +47,7 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
             "address",
             "state",
             "state_code",
+            "pincode",
             "bank_name",
             "bank_branch",
             "bank_account_number",
@@ -56,6 +57,14 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_pincode(self, value: str) -> str:
+        """Ensure pincode is either empty or exactly 6 digits."""
+        if not value:
+            return value
+        if len(value) != 6 or not value.isdigit():
+            raise serializers.ValidationError("Pincode must be exactly 6 digits.")
+        return value
 
     def validate_gstin(self, value: str) -> str:
         if value:
@@ -97,6 +106,7 @@ class CustomerListSerializer(serializers.ModelSerializer):
             "name",
             "gst_registered",
             "gstin",
+            "aadhaar_no",
             "phone",
             "state",
             "is_active",
@@ -128,6 +138,12 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             "address",
             "gst_registered",
             "gstin",
+            "gst_verified",
+            "gst_verified_at",
+            "gst_status",
+            "gst_legal_name",
+            "gst_trade_name",
+            "aadhaar_no",
             "state",
             "state_code",
             "phone",
@@ -136,7 +152,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "gst_verified_at"]
 
     def validate_name(self, value: str) -> str:
         if not value or not value.strip():
@@ -147,6 +163,13 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         if value:
             validate_gstin(value)
         return value.upper() if value else value
+
+    def validate_aadhaar_no(self, value: str) -> str:
+        if value:
+            value = value.replace(" ", "").strip()
+            if not value.isdigit() or len(value) != 12:
+                raise serializers.ValidationError("Aadhaar Number must be exactly 12 digits.")
+        return value
 
     def validate_phone(self, value: str) -> str:
         if value:
@@ -167,14 +190,52 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             if not gstin:
                 raise serializers.ValidationError({"gstin": "GSTIN is required for a GST-registered customer."})
             
+            # Phase 3 Duplicate Check & Invalidation
+            business = self.context['request'].user.business_profile
+            
+            # If creating new, or if updating and GSTIN has changed
+            instance_gstin = self.instance.gstin if self.instance else ''
+            if gstin != instance_gstin:
+                # Check duplicate
+                if Customer.objects.filter(business=business, gstin=gstin).exists():
+                    raise serializers.ValidationError({"gstin": "Customer with this GSTIN already exists."})
+                
+                # Invalidate if GSTIN changed on an existing record
+                if self.instance:
+                    data['gst_verified'] = False
+                    data['gst_status'] = ""
+                    data['gst_legal_name'] = ""
+                    data['gst_trade_name'] = ""
+
             state_code = data.get('state_code', self.instance.state_code if self.instance else '')
             if state_code and gstin[:2] != state_code:
                 raise serializers.ValidationError({"non_field_errors": ["GSTIN state code does not match the selected customer state."]})
         else:
-            # Force empty GSTIN if unregistered
+            # Force empty GSTIN and unverified if unregistered
             data['gstin'] = ""
+            data['gst_verified'] = False
+            data['gst_status'] = ""
+            data['gst_legal_name'] = ""
+            data['gst_trade_name'] = ""
             
         return data
+
+    def update(self, instance, validated_data):
+        # Auto-set verified timestamp if verified goes False -> True
+        if validated_data.get('gst_verified', False) and not instance.gst_verified:
+            from django.utils import timezone
+            validated_data['gst_verified_at'] = timezone.now()
+        # If verification is cleared
+        elif 'gst_verified' in validated_data and not validated_data['gst_verified']:
+            validated_data['gst_verified_at'] = None
+            
+        return super().update(instance, validated_data)
+
+    def create(self, validated_data):
+        if validated_data.get('gst_verified', False):
+            from django.utils import timezone
+            validated_data['gst_verified_at'] = timezone.now()
+        return super().create(validated_data)
 
 
 # ─────────────────────────────────────────────────────────────

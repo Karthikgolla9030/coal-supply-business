@@ -112,7 +112,12 @@ export default function InvoiceNew() {
     if (!form.transaction_type)      { errs.transaction_type = 'Select a transaction type.'; valid = false; }
     if (!selectedCustomer)           { errs.customer = 'Please select a customer.';         valid = false; }
     
-    if (!businessProfile?.state || !selectedCustomer?.state) {
+    if (!businessProfile?.state) {
+      return { valid: false, globalError: 'Your business profile is missing a State. Please update your Business Profile first.' };
+    }
+
+    if (selectedCustomer && !selectedCustomer.state) {
+      errs.customer = 'The selected customer is missing a State. This is required for tax calculation.';
       valid = false;
     }
 
@@ -132,7 +137,7 @@ export default function InvoiceNew() {
 
     setErrors(errs);
     setItemErrors(iErrs);
-    return valid;
+    return { valid, globalError: null, fieldErrors: Object.keys(errs) };
   }
 
   /* ── Submit ─────────────────────────────────────────────────── */
@@ -140,8 +145,14 @@ export default function InvoiceNew() {
     e.preventDefault();
     setTopAlert(null);
 
-    if (!validateFrontend()) {
-      setTopAlert({ type: 'error', message: 'Please fix the errors highlighted below before saving.' });
+    const validation = validateFrontend();
+    if (!validation.valid) {
+      let msg = validation.globalError;
+      if (!msg) {
+        const fields = validation.fieldErrors.length > 0 ? validation.fieldErrors.join(', ') : 'highlighted fields';
+        msg = `Please fix the errors in: ${fields}. Scroll down if necessary.`;
+      }
+      setTopAlert({ type: 'error', message: msg });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -173,7 +184,15 @@ export default function InvoiceNew() {
           setItemErrors(data.items.map((ie) => ie || {}));
         }
         setErrors(serverErrors);
-        setTopAlert({ type: 'error', message: serverErrors.non_field_errors || serverErrors.detail || 'Please fix the errors highlighted below.' });
+        
+        let msg = serverErrors.non_field_errors || serverErrors.detail;
+        if (!msg) {
+          const fields = Object.keys(serverErrors).filter(k => k !== 'non_field_errors' && k !== 'detail');
+          const fieldNames = fields.length > 0 ? fields.join(', ') : 'highlighted fields';
+          msg = `Please fix the errors in: ${fieldNames}. Scroll down if necessary.`;
+        }
+        
+        setTopAlert({ type: 'error', message: msg });
       } else {
         setTopAlert({ type: 'error', message: data?.detail || 'Failed to save invoice. Please try again.' });
       }

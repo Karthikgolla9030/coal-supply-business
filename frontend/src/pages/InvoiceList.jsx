@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { getInvoices, downloadInvoicePdf } from '../api/invoices';
 import { getCustomers } from '../api/customers';
-import { Search, Plus, FilterX, Download, Eye, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Search, Plus, FilterX, Download, Eye, CheckCircle2, XCircle, Clock, FileText } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 
 export default function InvoiceList() {
@@ -127,7 +127,7 @@ export default function InvoiceList() {
         <h1 className="page-title">Invoices</h1>
         <button 
           className="btn btn-primary" 
-          onClick={() => navigate('/invoices/create')}
+          onClick={() => navigate('/invoices/new')}
         >
           <Plus size={16} /> New Invoice
         </button>
@@ -230,7 +230,7 @@ export default function InvoiceList() {
           action={
             hasFilters 
               ? <button className="btn btn-secondary" onClick={handleClearFilters}>Clear Filters</button>
-              : <button className="btn btn-primary" onClick={() => navigate('/invoices/create')}><Plus size={16} /> Create Invoice</button>
+              : <button className="btn btn-primary" onClick={() => navigate('/invoices/new')}><Plus size={16} /> Create Invoice</button>
           }
         />
       ) : (

@@ -42,7 +42,7 @@ export default function InvoiceSuccess({ invoice, onReset }) {
         {[
           ['Invoice Number', invoice.invoice_number],
           ['Invoice Date',   invoice.invoice_date],
-          ['Customer',       invoice.customer_name],
+          ['Customer',       invoice.customer?.name],
           ['Transaction',    invoice.transaction_type],
           ['Status',         invoice.status],
         ].map(([label, value]) => (
@@ -63,7 +63,7 @@ export default function InvoiceSuccess({ invoice, onReset }) {
           ].map(([label, amt]) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', padding: 'var(--space-2) 0', borderBottom: '1px solid var(--color-border)' }}>
               <span style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-              <span style={{ fontFamily: 'monospace' }}>{fmtINR(invoice[label.split('(')[0].toLowerCase().trim().replace(/ /g, '_') + 'amount'] || amt)}</span>
+              <span style={{ fontFamily: 'monospace' }}>{fmtINR(amt)}</span>
             </div>
           ))}
 

@@ -1,337 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Invoice - {{ invoice.invoice_number }}</title>
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 1.5cm;
-        }
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 10pt;
-            color: #2c3e50;
-            line-height: 1.5;
-        }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .bold { font-weight: bold; }
-        
-        /* ── Header ── */
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #34495e;
-            padding-bottom: 12px;
-            margin-bottom: 25px;
-        }
-        .header h1 {
-            font-size: 22pt;
-            margin: 0 0 5px 0;
-            text-transform: uppercase;
-            color: #2c3e50;
-            letter-spacing: 1px;
-        }
-        .header p {
-            margin: 2px 0;
-            font-size: 10.5pt;
-            color: #555555;
-        }
-        
-        /* ── Title Bar ── */
-        .title-bar {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .title-bar h2 {
-            display: inline-block;
-            background-color: #34495e;
-            color: #ffffff;
-            padding: 8px 25px;
-            font-size: 14pt;
-            letter-spacing: 2px;
-            border-radius: 4px;
-            margin: 0;
-        }
+<meta charset="UTF-8">
+<title>Tax Invoice</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin-top: 1.8cm;
+    margin-bottom: 1cm;
+    margin-left: 1.8cm;
+    margin-right: 1.8cm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Times New Roman", Times, serif;
+    color: #000;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+  .invoice-wrap {
+    width: 100%;
+    margin: 0 auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  td, th {
+    border: 1.4px solid #000;
+    padding: 2px 4px;
+    vertical-align: middle;
+  }
+  .outer {
+    border-left: 2.1px solid #000;
+    border-right: 2.1px solid #000;
+    border-top: none;
+    border-bottom: none;
+  }
 
-        /* ── Info Grid ── */
-        .info-grid {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-        .info-grid td {
-            padding: 12px;
-            vertical-align: top;
-            width: 50%;
-            border: 1px solid #e0e0e0;
-            background-color: #fafbfc;
-        }
-        
-        /* ── Receiver ── */
-        .receiver {
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            margin-bottom: 20px;
-            background-color: #ffffff;
-        }
-        .receiver h3 {
-            margin: 0 0 8px 0;
-            font-size: 11pt;
-            color: #34495e;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 6px;
-            text-transform: uppercase;
-        }
-        
-        /* ── Items Table ── */
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .items-table th, .items-table td {
-            border: 1px solid #e0e0e0;
-            padding: 10px 8px;
-        }
-        .items-table th {
-            background-color: #34495e;
-            color: #ffffff;
-            font-weight: bold;
-            text-align: center;
-            font-size: 10.5pt;
-        }
-        .items-table td {
-            font-size: 10pt;
-        }
-        
-        /* ── Summary Table ── */
-        .summary-table {
-            width: 45%;
-            float: right;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-        }
-        .summary-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #ecf0f1;
-        }
-        .summary-table .grand-total {
-            font-weight: bold;
-            font-size: 13pt;
-            background-color: #f1c40f;
-            color: #2c3e50;
-            border-top: 2px solid #34495e;
-        }
-        
-        /* ── Amount in Words ── */
-        .amount-words {
-            clear: both;
-            border-left: 4px solid #34495e;
-            background-color: #f8f9fa;
-            padding: 12px 15px;
-            margin-bottom: 30px;
-            font-size: 11pt;
-        }
-        
-        /* ── Footer ── */
-        .footer-grid {
-            width: 100%;
-            border-top: 2px solid #34495e;
-            padding-top: 15px;
-        }
-        .footer-grid td {
-            vertical-align: top;
-            width: 50%;
-        }
-        .bank-details h4, .terms h4 {
-            margin: 0 0 6px 0;
-            font-size: 10pt;
-            color: #34495e;
-            text-transform: uppercase;
-        }
-        .bank-details p, .terms p {
-            margin: 3px 0;
-            font-size: 9.5pt;
-            color: #555;
-        }
-        .signature {
-            text-align: right;
-        }
-        .signature-space {
-            height: 70px;
-        }
-        .auth-sign {
-            font-weight: bold;
-            border-top: 1px dashed #7f8c8d;
-            padding-top: 5px;
-            display: inline-block;
-        }
-    </style>
+  /* Copy type / Tax invoice bar */
+  .type-bar td {
+    text-align: center;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 4px;
+    background-color: #e6e6e6;
+  }
+  .type-bar .copy-cell { width: 15%; }
+
+  /* Bill to / meta block */
+  .billto-cell {
+    width: 58%;
+    vertical-align: top;
+    padding: 4px;
+  }
+  .billto-label { font-weight: bold; font-size: 12px; }
+  .billto-body { padding-top: 4px; line-height: 1.3; font-size: 13px; padding-left: 15px; }
+
+  .meta-table { width: 100%; border: none; }
+  .meta-table td {
+    border: none;
+    border-bottom: 1.4px solid #000;
+    padding: 2px 6px;
+  }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-label { font-weight: bold; font-size: 12px; width: 40%; }
+  .meta-value { font-weight: bold; font-size: 13px; text-align: right; width: 60%; }
+  .meta-sub { font-size: 11px; font-style: italic; font-weight: normal; }
+  .meta-sub2 { font-size: 11px; font-weight: normal; }
+
+  /* GST / Truck row */
+  .gst-truck td { padding: 4px 6px; vertical-align: middle; }
+  .gst-truck .lbl { font-weight: bold; font-size: 11px; color: #222; }
+  .gst-truck .val { font-weight: bold; font-size: 13.5px; color: #000; }
+
+  /* Items table */
+  .items th {
+    text-align: center;
+    font-size: 11px;
+    background: #fff;
+    padding: 3px;
+  }
+  .items td {
+    text-align: center;
+    font-size: 12px;
+    padding: 5px 3px;
+    vertical-align: middle;
+  }
+  .items .desc-col { text-align: left; }
+  
+  /* State-type + total row */
+  .state-total td {
+    font-weight: bold;
+    padding: 3px 6px;
+  }
+  .state-total .state-cell { font-weight: normal; font-size: 12px; }
+  .state-total .total-label { text-align: left; width: 23%; }
+  .state-total .total-value { text-align: center; width: 22%; font-size: 13px; }
+
+  /* Tax table */
+  .tax-table th, .tax-table td {
+    text-align: center;
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+  .tax-table .tax-name { text-align: left; }
+
+  /* Words + Total after tax */
+  .words-total td { padding: 4px 6px; }
+  .words-total .words-cell {
+    width: 65%;
+    vertical-align: top;
+  }
+  .words-label { font-weight: bold; font-size: 12px; margin-bottom: 3px; }
+  .words-value { font-style: italic; font-size: 12px; }
+  .total-after-cell { text-align: center; vertical-align: middle; }
+  .total-after-label { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+  .total-after-value { font-size: 18px; font-weight: bold; }
+
+  /* TCS row */
+  .tcs-row td { font-weight: bold; text-align: center; font-size: 12px; vertical-align: middle; }
+  .tcs-inner { padding: 6px 0; }
+
+  /* Bank / transporter */
+  .bank-cell, .transporter-cell { vertical-align: top; padding: 6px 8px; font-size: 12px; }
+  .bank-row { padding: 3px 0; }
+  .bank-label { font-weight: bold; display: inline-block; width: 70px; font-size: 11px; color: #222; }
+  .bank-value { font-weight: bold; font-size: 12.5px; color: #000; margin-left: 4px; }
+  .transporter-label { font-weight: bold; font-size: 11px; color: #222; margin-bottom: 4px; }
+  .transporter-value { font-weight: bold; font-size: 13px; color: #000; }
+
+  /* Signature */
+  .signature-block {
+    text-align: right;
+    padding: 4px 10px 15px 10px;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .signature-block .sig-line { margin-top: 25px; font-weight: normal; }
+</style>
 </head>
 <body>
+<div class="invoice-wrap">
 
-    <!-- Header -->
-    <div class="header">
-        <h1>{{ business.business_name|default:"BUSINESS NAME" }}</h1>
-        {% if business.address %}<p>{{ business.address }}</p>{% endif %}
-        <p>
-            {% if business.gstin %}<span class="bold">GSTIN:</span> {{ business.gstin }}{% endif %}
-            {% if business.phone %}&nbsp;&nbsp;&nbsp;<span class="bold">Phone:</span> {{ business.phone }}{% endif %}
-            {% if business.email %}&nbsp;&nbsp;&nbsp;<span class="bold">Email:</span> {{ business.email }}{% endif %}
-        </p>
-    </div>
+  <table class="outer" style="border-top: 2.1px solid #000; border-bottom: none;">
+    <tr>
+      <td colspan="2" style="padding: 0; border-bottom: none;">
+        
+        <table style="width: 100%; background-color: #e6e6e6; margin: 0; padding: 0; border: none;">
+          <tr>
+            <td style="border: none; padding: 4px 8px; text-align: left; font-size: 12px; font-weight: bold;">GSTIN : {{ business.gstin }}</td>
+            <td style="border: none; padding: 4px 8px; text-align: right; font-size: 12px; font-weight: bold;">Cell No : {{ business.phone }}</td>
+          </tr>
+        </table>
 
-    <!-- Title -->
-    <div class="title-bar">
-        <h2>TAX INVOICE</h2>
-    </div>
-
-    <!-- Info Grid -->
-    <table class="info-grid">
-        <tr>
-            <td>
-                <div><span class="bold">Invoice No.:</span> {{ invoice.invoice_number }}</div>
-                <div><span class="bold">Date:</span> {{ invoice.invoice_date|date:"d/m/Y" }}</div>
-                <div><span class="bold">Type:</span> {{ invoice.transaction_type }}</div>
+        <table style="width: 100%; background-color: #ffffff; margin: 0; padding: 0; border: none;">
+          <tr>
+            <td style="border: none; padding: 8px 8px; line-height: 1.2;">
+              <table style="width: 100%; margin: 0; padding: 0; border: none;">
+                <tr>
+                  <td style="width: 130px; text-align: left; vertical-align: middle; border: none; padding-left: 10px;">
+                    {% if business_logo_path %}
+                      <img src="{{ business_logo_path }}" style="height: 85px;" />
+                    {% endif %}
+                  </td>
+                  <td style="text-align: center; vertical-align: middle; border: none;">
+                    <div style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">{{ business.business_name|upper }}</div>
+                    
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 3px;">{{ business.address|upper }}</div>
+                    
+                    {% if business.state or business.pincode %}
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 3px;">
+                      {% if business.state %}{{ business.state|upper }}{% endif %}{% if business.state and business.pincode %} - {% endif %}{% if business.pincode %}{{ business.pincode }}{% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 3px;">DEALERS IN : COAL SUPPLIERS</div>
+                  </td>
+                  <td style="width: 130px; border: none;"></td>
+                </tr>
+              </table>
             </td>
-            <td>
-                <div><span class="bold">Transport:</span> {{ invoice.transport_name|default:"-" }}</div>
-                <div><span class="bold">Vehicle No.:</span> {{ invoice.vehicle_number|default:"-" }}</div>
-                <div><span class="bold">Reverse Charge:</span> {% if invoice.reverse_charge %}Yes{% else %}No{% endif %}</div>
-            </td>
-        </tr>
-    </table>
+          </tr>
+        </table>
 
-    <!-- Receiver -->
-    <div class="receiver">
-        <h3>DETAILS OF RECEIVER / BILLED TO</h3>
-        <div><span class="bold">Name:</span> {{ customer.name }}</div>
-        {% if customer.address %}<div><span class="bold">Address:</span> {{ customer.address }}</div>{% endif %}
-        <div>
-            <span class="bold">GSTIN:</span> {% if customer.gst_registered %}{{ customer.gstin }}{% else %}Not Registered{% endif %}
-            {% if customer.state %}&nbsp;&nbsp;&nbsp;<span class="bold">State:</span> {{ customer.state }}{% endif %}
-            {% if customer.state_code %}&nbsp;&nbsp;&nbsp;<span class="bold">State Code:</span> {{ customer.state_code }}{% endif %}
+      </td>
+    </tr>
+  </table>
+
+  <!-- TABLE 2: Type bar -->
+  <table class="outer">
+    <tr class="type-bar">
+      <td class="copy-cell" style="width: 15%; border-right: 1.4px solid #000;">({{ copy_type }})</td>
+      <td style="width: 85%;">TAX INVOICE : {{ invoice.transaction_type|upper }}</td>
+    </tr>
+  </table>
+
+  <!-- TABLE 2B: Bill to and GST/Truck -->
+  <table class="outer" style="border-top: none; border-bottom: none;">
+    <tr>
+      <td class="billto-cell" style="width: 58%; border-right: 1.4px solid #000; border-top: none;">
+        <span class="billto-label">BILL TO :</span>
+        <div class="billto-body">
+          {{ customer.name|upper }}<br>
+          {{ customer.address }}<br>
+          {{ customer.state|upper }}{% if customer.state_code %} - {{ customer.state_code }}{% endif %}
         </div>
-    </div>
-
-    <!-- Items Table -->
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width: 5%;">Sl</th>
-                <th style="width: 35%; text-align: left;">Product</th>
-                <th style="width: 10%;">HSN</th>
-                <th style="width: 15%;">Qty</th>
-                <th style="width: 15%;">Rate</th>
-                <th style="width: 20%; text-align: right;">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td class="text-center">{{ item.serial_number }}</td>
-                <td>{{ item.product_name }}</td>
-                <td class="text-center">{{ item.hsn_code|default:"-" }}</td>
-                <td class="text-center">{{ item.quantity }} {{ item.unit }}</td>
-                <td class="text-right">{{ item.rate|floatformat:2 }}</td>
-                <td class="text-right">{{ item.amount|floatformat:2 }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" class="text-center">No items found</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Summary -->
-    <table class="summary-table">
-        <tr>
-            <td>Taxable Amount</td>
-            <td class="text-right">{{ invoice.taxable_amount|floatformat:2 }}</td>
-        </tr>
-        {% if invoice.cgst_amount > 0 %}
-        <tr>
-            <td>CGST @ {{ invoice.cgst_rate }}%</td>
-            <td class="text-right">{{ invoice.cgst_amount|floatformat:2 }}</td>
-        </tr>
+      </td>
+      <td style="padding:0; width: 42%; vertical-align: top; border-top: none;">
+        <table class="meta-table">
+          <tr>
+            <td class="meta-label" style="border-right: 1.4px solid #000;">DATE :</td>
+            <td class="meta-value">{{ invoice.invoice_date|date:"d/m/Y" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-label" style="border-right: 1.4px solid #000;">INVOICE NO :</td>
+            <td class="meta-value">{{ invoice.invoice_number }}<br>
+              <span class="meta-sub">{{ financial_year }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="meta-label" style="border-right: 1.4px solid #000;">DELIVERED AT :</td>
+            <td class="meta-value">{{ delivery_district|upper }}<br>
+              <span class="meta-sub2">{{ customer.state|upper }}</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr class="gst-truck">
+      <td style="width: 58%; border-right: 1.4px solid #000; border-top: 1.4px solid #000; border-bottom: none; vertical-align: middle;">
+        {% if customer.gst_registered and customer.gstin %}
+          <span class="lbl">GSTin / Aadhar No:</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width: 15px; height: 1px;"><span class="val">{{ customer.gstin }}</span>
+        {% elif customer.aadhaar_no %}
+          <span class="lbl">Aadhar No:</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width: 15px; height: 1px;"><span class="val">{{ customer.aadhaar_no }}</span>
         {% else %}
-        <tr>
-            <td>CGST</td>
-            <td class="text-right">—</td>
-        </tr>
+          <span class="lbl">GSTin / Aadhar No:</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width: 15px; height: 1px;"><span class="val">&nbsp;</span>
         {% endif %}
-        
-        {% if invoice.sgst_amount > 0 %}
-        <tr>
-            <td>SGST @ {{ invoice.sgst_rate }}%</td>
-            <td class="text-right">{{ invoice.sgst_amount|floatformat:2 }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td>SGST</td>
-            <td class="text-right">—</td>
-        </tr>
-        {% endif %}
-        
+      </td>
+      <td style="width: 42%; border-top: 1.4px solid #000; border-bottom: none; vertical-align: middle;">
+        <span class="lbl">TRUCK NO:</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="width: 15px; height: 1px;"><span class="val">{{ invoice.vehicle_number|upper }}</span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- TABLE 3: Items -->
+  <table class="outer items" style="border-bottom: none;">
+    <tr>
+      <th style="width:6%;">S.No</th>
+      <th style="width:28%;">DESCRIPTION</th>
+      <th style="width:12%;">HSN CODE</th>
+      <th style="width:12%;">QTY</th>
+      <th style="width:20%;">RATE</th>
+      <th style="width:22%;">AMOUNT</th>
+    </tr>
+    {% for item in items %}
+    <tr>
+      <td {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>{{ forloop.counter }}</td>
+      <td class="desc-col" {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>{{ item.product_name|upper }}</td>
+      <td {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>{{ item.hsn_code }}</td>
+      <td {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>
+        {{ item.quantity }}<br>
+        <span style="font-size: 10px; font-style: italic;">{{ item.unit|upper }}S</span>
+      </td>
+      <td {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>
+        {{ item.rate }}<br>
+        <span style="font-size: 10px; font-style: italic;">(Per {{ item.unit|upper }}S)</span>
+      </td>
+      <td {% if forloop.last and items|length >= 3 %}style="border-bottom: none;"{% endif %}>{{ item.amount }}</td>
+    </tr>
+    {% endfor %}
+    {% if items|length < 3 %}
+    <tr>
+      <td colspan="6" style="height:15px; border-bottom: none;"></td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <!-- TABLE 4: State-type + Total -->
+  <table class="outer" style="border-top: none;">
+    <tr class="state-total">
+      <td class="state-cell" style="width:58%; border-right: 1.4px solid #000; border-top: 1.4px solid #000; vertical-align: middle;">
         {% if invoice.igst_amount > 0 %}
-        <tr>
-            <td>IGST @ {{ invoice.igst_rate }}%</td>
-            <td class="text-right">{{ invoice.igst_amount|floatformat:2 }}</td>
-        </tr>
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAuElEQVR4nO1XQQ7AIAiDZv//MrsagwgOgof1DG0DosgiQp1AqzoRPdEEZjZLJiIc4hNnC3bCp0Z4ZyAqHDXCloGV+Io0Gm8amMnCvXXmo0Jcy1lVBxXiEROIEGSYMA3w4DBDXOOaqwBqBrLmPYJRC1pAZvl3nKBm4DdAfwsUVIzk9i2QgtFbYdQCNQPeO/sLrDcG3sQMcQ04XSROxLVzBi0xw4R3seFrl9Ir1vIrPibXfM2oCO034QuaFZYb1gj/CAAAAABJRU5ErkJggg==" style="width: 10px; height: 10px; margin-bottom: -1px;">
         {% else %}
-        <tr>
-            <td>IGST</td>
-            <td class="text-right">—</td>
-        </tr>
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA2klEQVR4nO1XwQ7FIAijZP//y7zsZoywds7o4XFc2tIAE0VE2M7wrdnN7FIJAMqSRQQkvSBb8JT4rRE8GVATq0ZQGciSZ6IqvjTQi8m9Jfm+IvmIk1XHVyRXTFyKQCWWYe/v1SCjnYEWqA6awmsxXompyVlMG84SFWFFy0eAmcHLQvoNvzgNWY7b5vC/ASPii6NYagEmV7Ci6axjpQqKlrOirInpKxmIfdDjFGyPu0p3uP3lW67iZkb78CfhmYFkquQj4hcm2Bbh2EvpEdfyIx4mxzzNbFFsX8c/3AfHFR8q1sAAAAAASUVORK5CYII=" style="width: 10px; height: 10px; margin-bottom: -1px;">
         {% endif %}
-        {% if invoice.tcs_amount > 0 %}
-        <tr>
-            <td>TCS @ {{ invoice.tcs_rate }}%</td>
-            <td class="text-right">{{ invoice.tcs_amount|floatformat:2 }}</td>
-        </tr>
+        &nbsp;In The State
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        {% if invoice.igst_amount > 0 %}
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA2klEQVR4nO1XwQ7FIAijZP//y7zsZoywds7o4XFc2tIAE0VE2M7wrdnN7FIJAMqSRQQkvSBb8JT4rRE8GVATq0ZQGciSZ6IqvjTQi8m9Jfm+IvmIk1XHVyRXTFyKQCWWYe/v1SCjnYEWqA6awmsxXompyVlMG84SFWFFy0eAmcHLQvoNvzgNWY7b5vC/ASPii6NYagEmV7Ci6axjpQqKlrOirInpKxmIfdDjFGyPu0p3uP3lW67iZkb78CfhmYFkquQj4hcm2Bbh2EvpEdfyIx4mxzzNbFFsX8c/3AfHFR8q1sAAAAAASUVORK5CYII=" style="width: 10px; height: 10px; margin-bottom: -1px;">
+        {% else %}
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAuElEQVR4nO1XQQ7AIAiDZv//MrsagwgOgof1DG0DosgiQp1AqzoRPdEEZjZLJiIc4hNnC3bCp0Z4ZyAqHDXCloGV+Io0Gm8amMnCvXXmo0Jcy1lVBxXiEROIEGSYMA3w4DBDXOOaqwBqBrLmPYJRC1pAZvl3nKBm4DdAfwsUVIzk9i2QgtFbYdQCNQPeO/sLrDcG3sQMcQ04XSROxLVzBi0xw4R3seFrl9Ir1vIrPibXfM2oCO034QuaFZYb1gj/CAAAAABJRU5ErkJggg==" style="width: 10px; height: 10px; margin-bottom: -1px;">
         {% endif %}
-        <tr class="grand-total">
-            <td>TOTAL</td>
-            <td class="text-right">{{ invoice.total_amount|floatformat:2 }}</td>
-        </tr>
-    </table>
+        &nbsp;Out Of State
+      </td>
+      <td class="total-label" style="width:20%; border-right: 1.4px solid #000; border-top: 1.4px solid #000;">TOTAL</td>
+      <td class="total-value" style="width:22%; border-top: 1.4px solid #000;">{{ invoice.taxable_amount }}</td>
+    </tr>
+  </table>
 
-    <!-- Amount in Words -->
-    <div class="amount-words">
-        <span class="bold">Amount in Words:</span><br>
-        {{ invoice.amount_in_words }}
-    </div>
+  <!-- TABLE 5: Tax breakdown -->
+  <table class="outer tax-table" style="border-top: none;">
+    <tr>
+      <th style="width:6%; border-top: none;">S.No</th>
+      <th style="width:30%; border-top: none;">TAXES</th>
+      <th style="width:10%; border-top: none;">%</th>
+      <th style="width:27%; border-top: none;">TAXABLE / VALUE</th>
+      <th style="width:27%; border-top: none;">AMOUNT</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td class="tax-name">SGST</td>
+      <td>{% if invoice.sgst_amount > 0 %}{{ invoice.sgst_rate }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.sgst_amount > 0 %}{{ invoice.taxable_amount }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.sgst_amount > 0 %}{{ invoice.sgst_amount }}{% else %}0{% endif %}</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td class="tax-name">CGST</td>
+      <td>{% if invoice.cgst_amount > 0 %}{{ invoice.cgst_rate }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.cgst_amount > 0 %}{{ invoice.taxable_amount }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.cgst_amount > 0 %}{{ invoice.cgst_amount }}{% else %}0{% endif %}</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td class="tax-name">IGST</td>
+      <td>{% if invoice.igst_amount > 0 %}{{ invoice.igst_rate }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.igst_amount > 0 %}{{ invoice.taxable_amount }}{% else %}0{% endif %}</td>
+      <td>{% if invoice.igst_amount > 0 %}{{ invoice.igst_amount }}{% else %}0{% endif %}</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td class="tax-name">GST Compensation Cess</td>
+      <td>&nbsp;</td>
+      <td>PER TON</td>
+      <td>0.00</td>
+    </tr>
+  </table>
 
-    <!-- Footer -->
-    <table class="footer-grid">
-        <tr>
-            <td>
-                {% if business.bank_name or business.bank_account_number %}
-                <div class="bank-details">
-                    <h4>BANK DETAILS</h4>
-                    <p><span class="bold">Bank:</span> {{ business.bank_name }}</p>
-                    <p><span class="bold">Branch:</span> {{ business.bank_branch }}</p>
-                    <p><span class="bold">Account No.:</span> {{ business.bank_account_number }}</p>
-                    <p><span class="bold">IFSC:</span> {{ business.bank_ifsc }}</p>
-                </div>
-                {% endif %}
-                
-                {% if business.terms_and_conditions %}
-                <div class="terms" style="margin-top: 15px;">
-                    <h4>TERMS & CONDITIONS</h4>
-                    <p>{{ business.terms_and_conditions|linebreaksbr }}</p>
-                </div>
-                {% endif %}
-            </td>
-            <td class="signature">
-                <p>For <span class="bold">{{ business.business_name }}</span></p>
-                <div class="signature-space"></div>
-                <p class="auth-sign">Authorized Signatory</p>
-            </td>
-        </tr>
-    </table>
+  <!-- TABLE 6: TCS + Words + Total -->
+  <table class="outer" style="border-top: none; border-bottom: none;">
+    <tr class="tcs-row">
+      <td style="width: 65%; text-align:left; border-right: 1.4px solid #000; border-top: none; border-bottom: 1.4px solid #000;">
+        <div class="tcs-inner" style="font-weight: bold; font-size: 13px;">TCS {{ invoice.tcs_rate|floatformat:"-2" }}%</div>
+      </td>
+      <td style="width: 35%; border-top: none; border-bottom: 1.4px solid #000; text-align: center;">
+        <div class="tcs-inner" style="font-weight: bold; font-size: 13px;">{{ invoice.tcs_amount|default:"0.00" }}</div>
+      </td>
+    </tr>
+    <tr>
+      <td class="words-cell" style="width: 65%; border-right: 1.4px solid #000; border-top: none; border-bottom: none; padding: 6px 8px; vertical-align: top;">
+        <div class="words-label">Rupees In Words :</div>
+        <div class="words-value" style="line-height: 1.4; padding-right: 4px;">{{ invoice.amount_in_words|title }}</div>
+      </td>
+      <td class="total-after-cell" style="width: 35%; border-top: none; border-bottom: none; padding: 6px 8px; vertical-align: middle;">
+        <div class="total-after-label">TOTAL AFTER TAX</div>
+        <div class="total-after-value">{{ invoice.total_amount }}</div>
+      </td>
+    </tr>
+  </table>
 
+  <!-- TABLE 8: Bank + Transporter -->
+  <table class="outer" style="border-top: none;">
+    <tr>
+      <td class="bank-cell" style="width: 58%; border-right: 1.4px solid #000; border-top: 1.4px solid #000;">
+        <div class="bank-row"><span class="bank-label">BANK</span> : <span class="bank-value">{{ business.bank_name|upper|default:"" }}</span></div>
+        <div class="bank-row"><span class="bank-label">BRANCH</span> : <span class="bank-value">{{ business.bank_branch|upper|default:"" }}</span></div>
+        <div class="bank-row"><span class="bank-label">A/C No</span> : <span class="bank-value">{{ business.bank_account_number|default:"" }}</span></div>
+        <div class="bank-row"><span class="bank-label">IFSC Code</span> : <span class="bank-value">{{ business.bank_ifsc|upper|default:"" }}</span></div>
+      </td>
+      <td class="transporter-cell" style="width:42%; border-top: 1.4px solid #000;">
+        <div class="transporter-label">TRANSPORTER :</div>
+        <div class="transporter-value">{{ invoice.transport_name|upper|default:"" }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- TABLE 8: Signature -->
+  <table class="outer" style="border-top: none; border-bottom: 2.1px solid #000;">
+    <tr>
+      <td style="border:none;">
+        <div class="signature-block">
+          For {{ business.business_name|upper }}<br>
+          <div class="sig-line">Signature</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+</div>
 </body>
 </html>

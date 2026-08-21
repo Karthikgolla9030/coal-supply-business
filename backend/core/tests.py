@@ -335,6 +335,19 @@ class ValidatorTest(TestCase):
 class AuthenticatedAPITestCase(APITestCase):
     """Base class that creates and authenticates a test user."""
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import django.test.client
+        cls._original_store = django.test.client.store_rendered_templates
+        django.test.client.store_rendered_templates = lambda *args, **kwargs: None
+
+    @classmethod
+    def tearDownClass(cls):
+        import django.test.client
+        django.test.client.store_rendered_templates = cls._original_store
+        super().tearDownClass()
+
     def setUp(self):
         self.user = User.objects.create_user(
             username="testuser",
@@ -386,7 +399,7 @@ class BusinessProfileAPITest(AuthenticatedAPITestCase):
         self.assertEqual(BusinessProfile.objects.count(), 1)
 
     def test_retrieve_profile_after_create(self):
-        BusinessProfile.objects.create(business_name="Coal Co.")
+        BusinessProfile.objects.create(business_name="Coal Co.", owner=self.user)
         response = self.client.get(self.RETRIEVE_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["business_name"], "Coal Co.")
@@ -397,7 +410,7 @@ class BusinessProfileAPITest(AuthenticatedAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_profile(self):
-        BusinessProfile.objects.create(business_name="Old Name")
+        BusinessProfile.objects.create(business_name="Old Name", owner=self.user)
         response = self.client.patch(self.UPDATE_URL, {"business_name": "New Name"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["business_name"], "New Name")
@@ -474,6 +487,10 @@ class CustomerAPITest(AuthenticatedAPITestCase):
     def reactivate_url(self, pk):
         return f"/api/customers/{pk}/reactivate/"
 
+    def setUp(self):
+        super().setUp()
+        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.", state="Karnataka", state_code="29", owner=self.user)
+
     def _valid_payload(self, **overrides):
         data = {
             "name": "ABC Traders",
@@ -489,7 +506,7 @@ class CustomerAPITest(AuthenticatedAPITestCase):
         return data
 
     def _create_customer(self, **kwargs):
-        return Customer.objects.create(**{"name": "Test Customer", **kwargs})
+        return Customer.objects.create(**{"business": self.business, "name": "Test Customer", **kwargs})
 
     # ── List ─────────────────────────────────────────────────
 
@@ -749,8 +766,21 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
     def setUp(self):
         super().setUp()
         # Every test needs a business profile and a customer
-        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.", state="Karnataka", state_code="29")
-        self.customer = Customer.objects.create(name="Test Buyer", is_active=True, state="Karnataka", state_code="29")
+        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.", state="Karnataka", state_code="29", owner=self.user)
+        self.customer = Customer.objects.create(business=self.business, name="Test Buyer", is_active=True, state="Karnataka", state_code="29")
+        
+        # Patch PDF generation to avoid xhtml2pdf crashing Django test context
+        from unittest.mock import patch
+        patcher = patch("core.views.InvoiceViewSet._generate_pdf_bytes")
+        self.mock_pdf = patcher.start()
+        self.mock_pdf.return_value = b"%PDF-mock"
+        self.addCleanup(patcher.stop)
+
+        # Disconnect template_rendered to prevent xhtml2pdf context copy crash
+        from django.test.signals import template_rendered
+        from django.test.client import store_rendered_templates
+        template_rendered.disconnect(store_rendered_templates)
+        self.addCleanup(lambda: template_rendered.connect(store_rendered_templates))
 
     def _valid_payload(self, **overrides):
         data = {
@@ -1007,9 +1037,11 @@ class InvoiceAPITest(AuthenticatedAPITestCase):
 
     # 25. Filter by customer
     def test_filter_by_customer(self):
-        customer2 = Customer.objects.create(name="Customer 2", state="Karnataka", state_code="29")
-        self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-1"), format="json")
-        self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-2", customer=customer2.pk), format="json")
+        customer2 = Customer.objects.create(business=self.business, name="Customer 2", is_active=True, state="Karnataka", state_code="29")
+        resp1 = self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-1"), format="json")
+        self.assertEqual(resp1.status_code, status.HTTP_201_CREATED, resp1.data)
+        resp2 = self.client.post(self.CREATE_URL, self._valid_payload(invoice_number="F-2", customer=customer2.pk), format="json")
+        self.assertEqual(resp2.status_code, status.HTTP_201_CREATED, resp2.data)
 
         resp = self.client.get(f"/api/invoices/?customer={customer2.pk}")
         self.assertEqual(resp.data["count"], 1)
@@ -1040,8 +1072,8 @@ class DashboardAPITest(AuthenticatedAPITestCase):
 
     def test_dashboard_aggregation(self):
         # Create some data
-        customer = Customer.objects.create(name="Customer 1", state="Karnataka", state_code="29")
         business = BusinessProfile.objects.create(business_name="ABC", owner=self.user, address="123", gstin="29ABC")
+        customer = Customer.objects.create(business=business, name="Customer 1", state="Karnataka", state_code="29")
 
         Invoice.objects.create(
             business=business,
@@ -1082,3 +1114,147 @@ class DashboardAPITest(AuthenticatedAPITestCase):
         self.assertEqual(len(data["recent_invoices"]), 2)
         self.assertTrue(data["business_profile_complete"])
 
+
+# ─────────────────────────────────────────────────────────────
+# GST Verification Service Tests (Phase 1)
+# ─────────────────────────────────────────────────────────────
+
+from unittest.mock import patch, Mock
+from core.services.gst_service import verify_gstin
+import requests
+
+class GSTServiceTests(TestCase):
+    
+    @patch("core.services.gst_service.requests.get")
+    @patch("core.services.gst_service.getattr")
+    def test_verify_gstin_success(self, mock_getattr, mock_get):
+        # Setup mock api key
+        mock_getattr.return_value = "TEST_API_KEY"
+        
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "success": True,
+            "data": {
+                "gstin": "36AAAAA1234A1Z5",
+                "legal_name": "TEST LEGAL NAME",
+                "trade_name": "TEST TRADE NAME",
+                "status": "Active",
+                "address": "123 Test St"
+            }
+        }
+        mock_get.return_value = mock_response
+
+        # Execute
+        result = verify_gstin(" 36AAAAA1234A1Z5 ")
+        
+        # Assertions
+        self.assertTrue(result["success"])
+        self.assertEqual(result["data"]["legal_name"], "TEST LEGAL NAME")
+        self.assertEqual(result["data"]["address"], "123 Test St")
+        self.assertEqual(result["data"]["gstin"], "36AAAAA1234A1Z5")
+        
+        # Verify request parameters
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        self.assertIn("36AAAAA1234A1Z5", args[0])
+        self.assertEqual(kwargs["headers"]["X-API-Key"], "TEST_API_KEY")
+
+    def test_verify_gstin_invalid_format(self):
+        result = verify_gstin("SHORTGSTIN")
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "Invalid GSTIN format")
+        
+    @patch("core.services.gst_service.requests.get")
+    @patch("core.services.gst_service.getattr")
+    def test_verify_gstin_auth_failure(self, mock_getattr, mock_get):
+        mock_getattr.return_value = "BAD_KEY"
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_get.return_value = mock_response
+
+        result = verify_gstin("36AAAAA1234A1Z5")
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "GST verification service authentication failed.")
+
+    @patch("core.services.gst_service.requests.get")
+    @patch("core.services.gst_service.getattr")
+    def test_verify_gstin_timeout(self, mock_getattr, mock_get):
+        mock_getattr.return_value = "TEST_API_KEY"
+        mock_get.side_effect = requests.exceptions.Timeout("Connection timed out")
+
+        result = verify_gstin("36AAAAA1234A1Z5")
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "GST verification service timed out. Please try again.")
+
+# ─────────────────────────────────────────────────────────────
+# GST Verification API Tests (Phase 3)
+# ─────────────────────────────────────────────────────────────
+class GSTVerificationAPITest(AuthenticatedAPITestCase):
+
+    VERIFY_URL = "/api/gst/verify/"
+    CREATE_CUSTOMER_URL = "/api/customers/create/"
+
+    def setUp(self):
+        super().setUp()
+        self.business = BusinessProfile.objects.create(business_name="Test Coal Co.", state="Karnataka", state_code="29", owner=self.user)
+
+    @patch("core.views.verify_gstin")
+    def test_verify_gstin_api_call(self, mock_verify):
+        mock_verify.return_value = {"success": True, "data": {"legal_name": "Test", "trade_name": "Test", "status": "Active", "address": "", "state": ""}}
+        response = self.client.post(self.VERIFY_URL, {"gstin": "36AAAAA1234A1Z5"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["source"], "api")
+        mock_verify.assert_called_once_with("36AAAAA1234A1Z5")
+
+    @patch("core.views.verify_gstin")
+    def test_verify_gstin_cache_hit(self, mock_verify):
+        Customer.objects.create(
+            business=self.business,
+            name="Existing",
+            gstin="36AAAAA1234A1Z5",
+            gst_verified=True,
+            gst_legal_name="Cached Name",
+            is_active=True
+        )
+        response = self.client.post(self.VERIFY_URL, {"gstin": "36AAAAA1234A1Z5"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["source"], "cache")
+        self.assertEqual(response.data["data"]["legal_name"], "Cached Name")
+        mock_verify.assert_not_called()
+
+    def test_gstin_change_invalidates_verification(self):
+        customer = Customer.objects.create(
+            business=self.business,
+            name="Test",
+            gst_registered=True,
+            gstin="36AAAAA1234A1Z5",
+            gst_verified=True,
+            gst_status="Active"
+        )
+        url = f"/api/customers/{customer.id}/update/"
+        # Change GSTIN
+        response = self.client.patch(url, {"gstin": "36AAAAA1234A1Z6"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        customer.refresh_from_db()
+        self.assertFalse(customer.gst_verified)
+        self.assertEqual(customer.gst_status, "")
+
+    def test_duplicate_gstin_rejected(self):
+        Customer.objects.create(
+            business=self.business,
+            name="Existing",
+            gst_registered=True,
+            gstin="36AAAAA1234A1Z5"
+        )
+        payload = {
+            "name": "New Guy",
+            "gst_registered": True,
+            "gstin": "36AAAAA1234A1Z5",
+            "state": "Telangana",
+            "state_code": "36"
+        }
+        response = self.client.post(self.CREATE_CUSTOMER_URL, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("gstin", response.data)

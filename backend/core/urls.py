@@ -15,7 +15,8 @@ from .views import (
     DashboardAPIView,
     GoogleDriveOAuthStartView,
     GoogleDriveOAuthCallbackView,
-    GoogleDriveStatusView
+    GoogleDriveStatusView,
+    GSTVerifyTestView
 )
 
 # ── Dashboard ──────────────────────────────────────────────
@@ -74,4 +75,7 @@ urlpatterns = [
     path("google-drive/oauth/start/", google_drive_oauth_start, name="google-drive-oauth-start"),
     path("google-drive/oauth/callback/", google_drive_oauth_callback, name="google-drive-oauth-callback"),
     path("google-drive/status/", google_drive_status, name="google-drive-status"),
+    
+    # External API Integrations (Phase 1)
+    path("gst/verify/", GSTVerifyTestView.as_view(), name="gst-verify-test"),
 ]

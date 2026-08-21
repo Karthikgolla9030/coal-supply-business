@@ -84,7 +84,7 @@ export default function Dashboard() {
         </div>
         <button 
           className="btn btn-primary" 
-          onClick={() => navigate('/invoices/create')}
+          onClick={() => navigate('/invoices/new')}
         >
           + New Invoice
         </button>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                 <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
                   Create your first invoice to start recording your coal sales.
                 </p>
-                <button className="btn btn-primary" onClick={() => navigate('/invoices/create')}>
+                <button className="btn btn-primary" onClick={() => navigate('/invoices/new')}>
                   + Create Invoice
                 </button>
               </div>
@@ -235,7 +235,7 @@ export default function Dashboard() {
           <div className="card" style={{ padding: '1.5rem' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Quick Actions</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button className="btn btn-secondary" style={{ textAlign: 'left', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => navigate('/invoices/create')}>
+              <button className="btn btn-secondary" style={{ textAlign: 'left', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => navigate('/invoices/new')}>
                 <FilePlus size={16} /> New Invoice
               </button>
               <button className="btn btn-secondary" style={{ textAlign: 'left', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => navigate('/customers')}>

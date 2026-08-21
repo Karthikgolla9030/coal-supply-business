@@ -11,6 +11,7 @@ import {
   deactivateCustomer,
   reactivateCustomer,
 } from '../api/customers';
+import { verifyGSTIN } from '../api/gst';
 import { getInvoices, downloadInvoicePdf } from '../api/invoices';
 import { Link } from 'react-router-dom';
 import { FileText, ArrowLeft, Save, Edit2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -20,10 +21,14 @@ const EMPTY_FORM = {
   address: '',
   gst_registered: false,
   gstin: '',
+  gst_verified: false,
+  gst_status: '',
+  gst_legal_name: '',
+  gst_trade_name: '',
+  aadhaar_no: '',
   state: '',
   state_code: '',
   phone: '',
-  email: '',
 };
 
 function extractErrors(data) {
@@ -119,6 +124,9 @@ function CustomerForm({ onSaved }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState(null);
+  
+  const [verifyingGst, setVerifyingGst] = useState(false);
+  const [gstVerifyMsg, setGstVerifyMsg] = useState(null); // { type: 'success'|'error', text: '...' }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -129,20 +137,97 @@ function CustomerForm({ onSaved }) {
       const code = getStateCode(val);
       setForm((p) => ({ ...p, state: val, state_code: code }));
     } else if (name === 'gst_registered') {
-      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '' }));
+      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '', aadhaar_no: !val ? p.aadhaar_no : '' }));
+    } else if (name === 'gstin') {
+      setForm((p) => ({ ...p, gstin: val, gst_verified: false, gst_status: '', gst_legal_name: '', gst_trade_name: '' }));
+      setGstVerifyMsg(null);
     } else {
       setForm((p) => ({ ...p, [name]: val }));
     }
     if (errors[name]) setErrors((p) => ({ ...p, [name]: undefined }));
   };
 
+  const handleVerifyGSTIN = async () => {
+    let cleanGstin = (form.gstin || '').trim().toUpperCase();
+    if (!cleanGstin) {
+      setGstVerifyMsg({ type: 'error', text: 'Please enter a GSTIN first.' });
+      return;
+    }
+    if (cleanGstin.length !== 15) {
+      setGstVerifyMsg({ type: 'error', text: 'GSTIN must be exactly 15 characters.' });
+      return;
+    }
+
+    setVerifyingGst(true);
+    setGstVerifyMsg(null);
+    try {
+      const res = await verifyGSTIN(cleanGstin);
+      const data = res.data;
+      if (data.success && data.data) {
+        const result = data.data;
+        const newName = result.trade_name || result.legal_name || form.name;
+        const newAddress = result.address || form.address;
+        const newState = result.state || form.state;
+        
+        let newStateCode = form.state_code;
+        if (result.state) {
+           newStateCode = getStateCode(result.state) || form.state_code;
+        }
+
+        setForm(p => ({
+          ...p,
+          gstin: cleanGstin,
+          gst_verified: true,
+          gst_status: result.status || '',
+          gst_legal_name: result.legal_name || '',
+          gst_trade_name: result.trade_name || '',
+          name: newName,
+          address: newAddress,
+          state: newState,
+          state_code: newStateCode
+        }));
+        
+        setGstVerifyMsg({ 
+          type: 'success', 
+          text: `✓ GSTIN Verified${result.status ? ` (Status: ${result.status})` : ''}` 
+        });
+      } else {
+        setGstVerifyMsg({ type: 'error', text: `❌ ${data.error || 'Failed to verify GSTIN.'}` });
+      }
+    } catch (err) {
+      setGstVerifyMsg({ 
+        type: 'error', 
+        text: `⚠️ GST verification service is temporarily unavailable. Please try again.` 
+      });
+    } finally {
+      setVerifyingGst(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setAlert(null);
+
+    const payload = { ...form };
+    
+    // Aadhaar frontend validation for unregistered
+    if (!payload.gst_registered) {
+      const cleanedAadhaar = (payload.aadhaar_no || '').replace(/\s/g, '');
+      if (!/^\d{12}$/.test(cleanedAadhaar)) {
+        setErrors({ aadhaar_no: 'Aadhaar Number must be exactly 12 digits' });
+        setAlert({ type: 'error', message: 'Please fix the errors below.' });
+        return;
+      }
+      payload.aadhaar_no = cleanedAadhaar;
+      payload.gstin = '';
+    } else {
+      payload.aadhaar_no = '';
+    }
+
     setSaving(true);
     try {
-      const res = await createCustomer(form);
+      const res = await createCustomer(payload);
       navigate(`/customers/${res.data.id}`);
     } catch (err) {
       const data = err.response?.data;
@@ -201,21 +286,52 @@ function CustomerForm({ onSaved }) {
             </div>
 
             {form.gst_registered ? (
-              <FormField label="GSTIN *" name="gstin" id="customer_gstin" required
-                value={form.gstin} onChange={handleChange} error={errors.gstin}
-                placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
-            ) : (
               <div className="form-field">
-                <label>GSTIN</label>
-                <input type="text" value="Not Applicable" disabled className="input disabled" />
+                <label htmlFor="customer_gstin">
+                  GSTIN <span className="required">*</span>
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      id="customer_gstin"
+                      name="gstin"
+                      value={form.gstin}
+                      onChange={handleChange}
+                      placeholder="e.g. 29ABCDE1234F1Z5"
+                      maxLength={15}
+                      className={`form-input ${errors.gstin ? 'error' : ''}`}
+                    />
+                    {errors.gstin && <p className="form-error">{errors.gstin}</p>}
+                    {gstVerifyMsg && (
+                      <p style={{ 
+                        marginTop: '0.25rem', 
+                        fontSize: '0.85rem', 
+                        color: gstVerifyMsg.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'
+                      }}>
+                        {gstVerifyMsg.text}
+                      </p>
+                    )}
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={handleVerifyGSTIN}
+                    disabled={verifyingGst}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {verifyingGst ? 'Verifying...' : 'Verify GSTIN'}
+                  </button>
+                </div>
               </div>
+            ) : (
+              <FormField label="Aadhaar Number *" name="aadhaar_no" id="customer_aadhaar" required
+                value={form.aadhaar_no} onChange={handleChange} error={errors.aadhaar_no}
+                placeholder="e.g. 1234 5678 9012" maxLength={14} />
             )}
             <FormField label="Phone" name="phone" id="customer_phone" type="tel"
               value={form.phone} onChange={handleChange} error={errors.phone}
               placeholder="e.g. 9876543210" />
-            <FormField label="Email" name="email" id="customer_email" type="email"
-              value={form.email} onChange={handleChange} error={errors.email}
-              placeholder="e.g. buyer@example.com" />
             <div className="form-field">
               <label htmlFor="customer_state">State</label>
               <select
@@ -273,6 +389,9 @@ function CustomerDetail({ id }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [alert, setAlert] = useState(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  
+  const [verifyingGst, setVerifyingGst] = useState(false);
+  const [gstVerifyMsg, setGstVerifyMsg] = useState(null);
 
   const loadCustomer = () => {
     setLoading(true);
@@ -284,10 +403,14 @@ function CustomerDetail({ id }) {
           address:    res.data.address    ?? '',
           gst_registered: res.data.gst_registered ?? false,
           gstin:      res.data.gstin      ?? '',
+          gst_verified: res.data.gst_verified ?? false,
+          gst_status: res.data.gst_status ?? '',
+          gst_legal_name: res.data.gst_legal_name ?? '',
+          gst_trade_name: res.data.gst_trade_name ?? '',
+          aadhaar_no: res.data.aadhaar_no ?? '',
           state:      res.data.state      ?? '',
           state_code: res.data.state_code ?? '',
           phone:      res.data.phone      ?? '',
-          email:      res.data.email      ?? '',
         });
       })
       .catch(() => setAlert({ type: 'error', message: 'Customer not found.' }))
@@ -297,23 +420,98 @@ function CustomerDetail({ id }) {
   useEffect(() => { loadCustomer(); }, [id]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    let val = type === 'checkbox' ? checked : value;
+    if (name === 'gst_registered') val = value === 'true';
+
     if (name === 'state') {
-      const code = getStateCode(value);
-      setForm((p) => ({ ...p, state: value, state_code: code }));
+      const code = getStateCode(val);
+      setForm((p) => ({ ...p, state: val, state_code: code }));
+    } else if (name === 'gst_registered') {
+      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '', aadhaar_no: !val ? p.aadhaar_no : '' }));
     } else {
-      setForm((p) => ({ ...p, [name]: value }));
+      setForm((p) => ({ ...p, [name]: val }));
     }
     if (errors[name]) setErrors((p) => ({ ...p, [name]: undefined }));
+    if (name === 'gstin') setGstVerifyMsg(null);
+  };
+
+  const handleVerifyGSTIN = async () => {
+    let cleanGstin = (form.gstin || '').trim().toUpperCase();
+    if (!cleanGstin) {
+      setGstVerifyMsg({ type: 'error', text: 'Please enter a GSTIN first.' });
+      return;
+    }
+    if (cleanGstin.length !== 15) {
+      setGstVerifyMsg({ type: 'error', text: 'GSTIN must be exactly 15 characters.' });
+      return;
+    }
+
+    setVerifyingGst(true);
+    setGstVerifyMsg(null);
+    try {
+      const res = await verifyGSTIN(cleanGstin);
+      const data = res.data;
+      if (data.success && data.data) {
+        const result = data.data;
+        const newName = result.trade_name || result.legal_name || form.name;
+        const newAddress = result.address || form.address;
+        const newState = result.state || form.state;
+        
+        let newStateCode = form.state_code;
+        if (result.state) {
+           newStateCode = getStateCode(result.state) || form.state_code;
+        }
+
+        setForm(p => ({
+          ...p,
+          gstin: cleanGstin,
+          name: newName,
+          address: newAddress,
+          state: newState,
+          state_code: newStateCode
+        }));
+        
+        setGstVerifyMsg({ 
+          type: 'success', 
+          text: `✓ GSTIN Verified${result.status ? ` (Status: ${result.status})` : ''}` 
+        });
+      } else {
+        setGstVerifyMsg({ type: 'error', text: `❌ ${data.error || 'Failed to verify GSTIN.'}` });
+      }
+    } catch (err) {
+      setGstVerifyMsg({ 
+        type: 'error', 
+        text: `⚠️ GST verification service is temporarily unavailable. Please try again.` 
+      });
+    } finally {
+      setVerifyingGst(false);
+    }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setErrors({});
     setAlert(null);
+
+    const payload = { ...form };
+    
+    if (!payload.gst_registered) {
+      const cleanedAadhaar = (payload.aadhaar_no || '').replace(/\s/g, '');
+      if (!/^\d{12}$/.test(cleanedAadhaar)) {
+        setErrors({ aadhaar_no: 'Aadhaar Number must be exactly 12 digits' });
+        setAlert({ type: 'error', message: 'Please fix the errors below.' });
+        return;
+      }
+      payload.aadhaar_no = cleanedAadhaar;
+      payload.gstin = '';
+    } else {
+      payload.aadhaar_no = '';
+    }
+
     setSaving(true);
     try {
-      const res = await updateCustomer(id, form);
+      const res = await updateCustomer(id, payload);
       setCustomer(res.data);
       setEditing(false);
       setAlert({ type: 'success', message: 'Customer updated successfully.' });
@@ -425,15 +623,49 @@ function CustomerDetail({ id }) {
               </div>
 
               {form.gst_registered ? (
-                <FormField label="GSTIN *" name="gstin" id="edit_gstin" required value={form.gstin} onChange={handleChange} error={errors.gstin} maxLength={15} />
-              ) : (
                 <div className="form-field">
-                  <label>GSTIN</label>
-                  <input type="text" value="Not Applicable" disabled className="input disabled" />
+                  <label htmlFor="edit_gstin">
+                    GSTIN <span className="required">*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        id="edit_gstin"
+                        name="gstin"
+                        value={form.gstin}
+                        onChange={handleChange}
+                        maxLength={15}
+                        className={`form-input ${errors.gstin ? 'error' : ''}`}
+                      />
+                      {errors.gstin && <p className="form-error">{errors.gstin}</p>}
+                      {gstVerifyMsg && (
+                        <p style={{ 
+                          marginTop: '0.25rem', 
+                          fontSize: '0.85rem', 
+                          color: gstVerifyMsg.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'
+                        }}>
+                          {gstVerifyMsg.text}
+                        </p>
+                      )}
+                    </div>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={handleVerifyGSTIN}
+                      disabled={verifyingGst}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {verifyingGst ? 'Verifying...' : 'Verify GSTIN'}
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <FormField label="Aadhaar Number *" name="aadhaar_no" id="edit_aadhaar" required
+                  value={form.aadhaar_no} onChange={handleChange} error={errors.aadhaar_no}
+                  placeholder="e.g. 1234 5678 9012" maxLength={14} />
               )}
               <FormField label="Phone" name="phone" id="edit_phone" type="tel" value={form.phone} onChange={handleChange} error={errors.phone} />
-              <FormField label="Email" name="email" id="edit_email" type="email" value={form.email} onChange={handleChange} error={errors.email} />
               <div className="form-field">
                 <label htmlFor="edit_state">State</label>
                 <select
@@ -441,7 +673,7 @@ function CustomerDetail({ id }) {
                   name="state"
                   value={form.state}
                   onChange={handleChange}
-                  className={errors.state ? 'error' : ''}
+                  className={`form-input ${errors.state ? 'error' : ''}`}
                 >
                   <option value="">-- Select State --</option>
                   {INDIAN_STATES.map((s) => (
@@ -459,7 +691,7 @@ function CustomerDetail({ id }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setErrors({}); setAlert(null); }}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setErrors({}); setAlert(null); setGstVerifyMsg(null); }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving} id="save-edit-customer-btn">
@@ -476,8 +708,8 @@ function CustomerDetail({ id }) {
               ['Status', <StatusBadge active={customer.is_active} />],
               ['GST Status', customer.gst_registered ? 'GST Registered' : 'Unregistered'],
               ['GSTIN', customer.gst_registered ? customer.gstin : 'Not Applicable'],
+              ['Aadhaar Number', customer.gst_registered ? 'Not Applicable' : (customer.aadhaar_no ? `XXXX XXXX ${customer.aadhaar_no.slice(-4)}` : 'Not provided')],
               ['Phone', customer.phone || '—'],
-              ['Email', customer.email || '—'],
               ['State', customer.state || '—'],
               ['State Code', customer.state_code || '—'],
               ['Address', customer.address || '—'],

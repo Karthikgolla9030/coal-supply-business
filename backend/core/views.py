@@ -149,7 +149,7 @@ class CustomerViewSet(viewsets.GenericViewSet):
                 {"detail": "You must create a business profile before adding customers."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        serializer = CustomerDetailSerializer(data=request.data)
+        serializer = CustomerDetailSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save(business=request.user.business_profile)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -157,13 +157,13 @@ class CustomerViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["get"], url_path="")
     def retrieve_customer(self, request, pk=None):
         customer = self._get_customer_or_404(pk)
-        serializer = CustomerDetailSerializer(customer)
+        serializer = CustomerDetailSerializer(customer, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["patch"], url_path="update")
     def update_customer(self, request, pk=None):
         customer = self._get_customer_or_404(pk)
-        serializer = CustomerDetailSerializer(customer, data=request.data, partial=True)
+        serializer = CustomerDetailSerializer(customer, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -272,7 +272,7 @@ class InvoiceViewSet(viewsets.GenericViewSet):
         Returns 201 with the full invoice detail on success.
         Returns 400 with field-level errors on validation failure.
         """
-        serializer = InvoiceCreateSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         invoice = serializer.save()
 
@@ -282,8 +282,6 @@ class InvoiceViewSet(viewsets.GenericViewSet):
             pdf_bytes = self._generate_pdf_bytes(invoice)
             upload_invoice_pdf(invoice, pdf_bytes)
         except Exception as e:
-            # We explicitly catch all exceptions here so that a failure in PDF generation
-            # or Google Drive upload DOES NOT rollback the successfully saved invoice.
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Automatic Google Drive upload failed for Invoice {invoice.invoice_number}: {e}")
@@ -312,11 +310,35 @@ class InvoiceViewSet(viewsets.GenericViewSet):
 
     def _generate_pdf_bytes(self, invoice):
         """Helper to generate PDF binary data for an invoice."""
+        def get_financial_year(date_obj):
+            if not date_obj: return ""
+            if date_obj.month >= 4:
+                return f"{date_obj.year}-{str(date_obj.year + 1)[2:]}"
+            return f"{date_obj.year - 1}-{str(date_obj.year)[2:]}"
+            
+        def get_delivery_district(address, state):
+            # SAFE FALLBACK: Extract district/city from address without external APIs
+            if not address:
+                return ""
+            parts = [p.strip() for p in address.split(",") if p.strip()]
+            if len(parts) > 1:
+                # If the last part contains the state (e.g. "Andhra Pradesh - 517505"), 
+                # the previous part is usually the city/district.
+                if state and state.lower() in parts[-1].lower():
+                    return parts[-2]
+                # If state is not at the end, assume the last part before zip or the last meaningful part
+                return parts[-1]
+            return address
+
         context = {
             "invoice": invoice,
             "business": invoice.business,
             "customer": invoice.customer,
             "items": invoice.items.all(),
+            "financial_year": get_financial_year(invoice.invoice_date),
+            "copy_type": getattr(invoice, "_copy_type", "ORIGINAL"),
+            "delivery_district": get_delivery_district(invoice.customer.address, invoice.customer.state),
+            "business_logo_path": os.path.join(settings.BASE_DIR, "core", "static", "core", "images", "logo.jpg"),
         }
         html_string = render_to_string("invoice_pdf.html", context)
         
@@ -331,8 +353,14 @@ class InvoiceViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=["get"], url_path="pdf")
     def generate_pdf(self, request, pk=None):
-        """GET /api/invoices/<id>/pdf/ — generate and download a PDF version."""
+        """GET /api/invoices/<id>/pdf/ — generate and download a PDF version.
+        Optional query param: ?copy=duplicate  → prints DUPLICATE on the invoice.
+        """
         invoice = self._get_invoice_or_404(pk)
+
+        # Attach copy type so the template can display ORIGINAL / DUPLICATE
+        copy_param = request.query_params.get("copy", "original").strip().upper()
+        invoice._copy_type = copy_param if copy_param in ("ORIGINAL", "DUPLICATE") else "ORIGINAL"
 
         try:
             pdf_bytes = self._generate_pdf_bytes(invoice)
@@ -480,11 +508,8 @@ class RegisterView(APIView):
         password = data.get("password", "")
         password_confirm = data.get("password_confirm", "")
         
-        # Required Business fields
-        business_name = data.get("business_name", "").strip()
-        
         # Validation
-        if not all([full_name, email, password, password_confirm, business_name]):
+        if not all([full_name, email, password, password_confirm]):
             return Response({"detail": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
             
         if password != password_confirm:
@@ -519,6 +544,11 @@ class RegisterView(APIView):
         )
         user.set_password(password)
         user.save()
+        
+        # Determine business name
+        business_name = data.get("business_name", "").strip()
+        if not business_name:
+            business_name = f"{first_name}'s Business"
         
         # Create Business Profile
         BusinessProfile.objects.create(
@@ -705,3 +735,48 @@ class GoogleDriveStatusView(APIView):
         business = request.user.business_profile
         is_connected = bool(business and business.google_oauth_refresh_token)
         return Response({"connected": is_connected})
+
+
+# ─────────────────────────────────────────────────────────────
+# External Integrations (Phase 1: GSTVerify API)
+# ─────────────────────────────────────────────────────────────
+
+from .services.gst_service import verify_gstin
+
+class GSTVerifyTestView(APIView):
+    """
+    Endpoint for verifying GSTIN details (with DB caching).
+    POST /api/gst/verify/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        gstin = request.data.get("gstin", "").strip()
+        if not gstin:
+            return Response({"success": False, "error": "GSTIN is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Phase 3 Caching logic
+        if hasattr(request.user, 'business_profile'):
+            business = request.user.business_profile
+            cached_customer = Customer.objects.filter(business=business, gstin=gstin, gst_verified=True).first()
+            if cached_customer:
+                return Response({
+                    "success": True,
+                    "source": "cache",
+                    "data": {
+                        "gstin": cached_customer.gstin,
+                        "legal_name": cached_customer.gst_legal_name,
+                        "trade_name": cached_customer.gst_trade_name,
+                        "status": cached_customer.gst_status,
+                        "state": cached_customer.state,
+                        "address": cached_customer.address
+                    }
+                }, status=status.HTTP_200_OK)
+
+        # Cache miss, call the external service
+        result = verify_gstin(gstin)
+        
+        if result.get("success"):
+            result["source"] = "api"
+            
+        return Response(result, status=status.HTTP_200_OK)

@@ -199,3 +199,9 @@ GOOGLE_OAUTH_REDIRECT_URI = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "http://127.0
 # Legacy Service Account configuration (kept temporarily)
 _default_creds = BASE_DIR.parent / "backend" / "credentials" / "google-service-account.json"
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", str(_default_creds))
+
+# ─────────────────────────────────────────────
+# External APIs (Phase 1 GSTIN Integration)
+# ─────────────────────────────────────────────
+
+GSTIN_API_KEY = os.getenv("GSTIN_API_KEY")

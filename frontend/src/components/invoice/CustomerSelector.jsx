@@ -3,6 +3,7 @@ import FormField from '../FormField';
 import { getCustomers, createCustomer } from '../../api/customers';
 import { INDIAN_STATES, getStateCode } from '../../utils/states';
 import { Plus, X, Search } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 function useDebounce(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -16,7 +17,7 @@ function useDebounce(value, delay = 350) {
 /* ── Add New Customer Modal ─────────────────────────────────── */
 function AddCustomerModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
-    name: '', address: '', gst_registered: false, gstin: '', state: '', state_code: '', phone: '', email: '',
+    name: '', address: '', gst_registered: false, gstin: '', aadhaar_no: '', state: '', state_code: '', phone: '', email: '',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -31,7 +32,7 @@ function AddCustomerModal({ onClose, onCreated }) {
       const code = getStateCode(val);
       setForm((p) => ({ ...p, state: val, state_code: code }));
     } else if (name === 'gst_registered') {
-      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '' }));
+      setForm((p) => ({ ...p, gst_registered: val, gstin: val ? p.gstin : '', aadhaar_no: val ? '' : p.aadhaar_no }));
     } else {
       setForm((p) => ({ ...p, [name]: val }));
     }
@@ -61,7 +62,7 @@ function AddCustomerModal({ onClose, onCreated }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
@@ -94,10 +95,9 @@ function AddCustomerModal({ onClose, onCreated }) {
                   value={form.gstin} onChange={handleChange} error={errors.gstin}
                   placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
               ) : (
-                <div className="form-field">
-                  <label>GSTIN</label>
-                  <input type="text" value="Not Applicable" disabled className="input disabled" />
-                </div>
+                <FormField label="Aadhaar No. (Optional)" name="aadhaar_no" id="new_cust_aadhaar"
+                  value={form.aadhaar_no} onChange={handleChange} error={errors.aadhaar_no}
+                  placeholder="e.g. 123456789012" maxLength={12} />
               )}
               <FormField label="Phone" name="phone" id="new_cust_phone" type="tel"
                 value={form.phone} onChange={handleChange} error={errors.phone}
@@ -111,7 +111,7 @@ function AddCustomerModal({ onClose, onCreated }) {
                   name="state"
                   value={form.state}
                   onChange={handleChange}
-                  className={errors.state ? 'error' : ''}
+                  className={`form-input ${errors.state ? 'error' : ''}`}
                 >
                   <option value="">-- Select State --</option>
                   {INDIAN_STATES.map((s) => (
@@ -138,7 +138,8 @@ function AddCustomerModal({ onClose, onCreated }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -146,7 +147,9 @@ function AddCustomerModal({ onClose, onCreated }) {
 function CustomerDisplay({ customer, onClear }) {
   const fields = [
     ['GST Status', customer.gst_registered ? 'GST Registered' : 'Unregistered'],
-    ['GSTIN',      customer.gst_registered ? customer.gstin : 'Not Applicable'],
+    customer.gst_registered 
+      ? ['GSTIN', customer.gstin || '—'] 
+      : ['Aadhaar No', customer.aadhaar_no || 'Not Provided'],
     ['Address',    customer.address],
     ['State',      customer.state],
     ['State Code', customer.state_code],
