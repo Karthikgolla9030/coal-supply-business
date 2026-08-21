@@ -19,7 +19,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from .models import BusinessProfile, Customer, Invoice, InvoiceItem, InvoiceStatus, TransactionType
+from .models import BusinessProfile, Customer, Invoice, InvoiceItem, InvoiceStatus, TransactionType, LedgerEntry, LedgerPayment
 from .validators import validate_gstin, validate_ifsc, validate_phone
 
 
@@ -1258,3 +1258,148 @@ class GSTVerificationAPITest(AuthenticatedAPITestCase):
         response = self.client.post(self.CREATE_CUSTOMER_URL, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("gstin", response.data)
+
+# ═════════════════════════════════════════════════════════════
+# PHASE 1 — Ledger Foundation Tests
+# ═════════════════════════════════════════════════════════════
+
+class LedgerTests(TestCase):
+    def setUp(self):
+        # Create Business A
+        self.user_a = User.objects.create_user(username="usera", password="password")
+        self.business_a = BusinessProfile.objects.create(
+            owner=self.user_a,
+            business_name="Business A"
+        )
+        self.customer_a = Customer.objects.create(
+            business=self.business_a,
+            name="ABC Traders"
+        )
+        
+        # Create Business B
+        self.user_b = User.objects.create_user(username="userb", password="password")
+        self.business_b = BusinessProfile.objects.create(
+            owner=self.user_b,
+            business_name="Business B"
+        )
+
+    def test_receivable_creation(self):
+        """TEST 1 — RECEIVABLE: Status = PENDING, Paid = ₹0, Remaining = ₹1,00,000"""
+        entry = LedgerEntry.objects.create(
+            business=self.business_a,
+            customer=self.customer_a,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("100000.00")
+        )
+        self.assertEqual(entry.status, "PENDING")
+        self.assertEqual(entry.get_paid_amount(), Decimal("0.00"))
+        self.assertEqual(entry.get_remaining_amount(), Decimal("100000.00"))
+
+    def test_partial_payment(self):
+        """TEST 2 — PARTIAL PAYMENT: Record ₹30,000"""
+        entry = LedgerEntry.objects.create(
+            business=self.business_a,
+            customer=self.customer_a,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("100000.00")
+        )
+        
+        LedgerPayment.objects.create(
+            ledger_entry=entry,
+            amount=Decimal("30000.00"),
+            payment_date=datetime.date.today()
+        )
+        
+        entry.refresh_from_db()
+        self.assertEqual(entry.get_paid_amount(), Decimal("30000.00"))
+        self.assertEqual(entry.get_remaining_amount(), Decimal("70000.00"))
+        self.assertEqual(entry.status, "PARTIALLY_PAID")
+
+    def test_final_payment(self):
+        """TEST 3 — FINAL PAYMENT: Record ₹70,000 to fully pay"""
+        entry = LedgerEntry.objects.create(
+            business=self.business_a,
+            customer=self.customer_a,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("100000.00")
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry,
+            amount=Decimal("30000.00"),
+            payment_date=datetime.date.today()
+        )
+        
+        LedgerPayment.objects.create(
+            ledger_entry=entry,
+            amount=Decimal("70000.00"),
+            payment_date=datetime.date.today()
+        )
+        
+        entry.refresh_from_db()
+        self.assertEqual(entry.get_paid_amount(), Decimal("100000.00"))
+        self.assertEqual(entry.get_remaining_amount(), Decimal("0.00"))
+        self.assertEqual(entry.status, "PAID")
+
+    def test_overpayment_rejected(self):
+        """TEST 4 — OVERPAYMENT: Attempt to pay ₹15,000 when only ₹10,000 remains"""
+        entry = LedgerEntry.objects.create(
+            business=self.business_a,
+            customer=self.customer_a,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("50000.00")
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry,
+            amount=Decimal("40000.00"),
+            payment_date=datetime.date.today()
+        )
+        
+        with self.assertRaisesMessage(ValidationError, "Payment amount exceeds the remaining ledger balance."):
+            LedgerPayment.objects.create(
+                ledger_entry=entry,
+                amount=Decimal("15000.00"),
+                payment_date=datetime.date.today()
+            )
+            
+        entry.refresh_from_db()
+        self.assertEqual(entry.get_paid_amount(), Decimal("40000.00"))
+        self.assertEqual(entry.get_remaining_amount(), Decimal("10000.00"))
+
+    def test_payable_creation(self):
+        """TEST 5 — PAYABLE: Create for a Supplier"""
+        entry = LedgerEntry.objects.create(
+            business=self.business_a,
+            party_name="ABC Coal Suppliers",
+            transaction_type="PAYABLE",
+            amount=Decimal("80000.00")
+        )
+        self.assertEqual(entry.status, "PENDING")
+        self.assertEqual(entry.get_paid_amount(), Decimal("0.00"))
+        self.assertEqual(entry.get_remaining_amount(), Decimal("80000.00"))
+
+    def test_business_isolation_api(self):
+        """TEST 6 — BUSINESS ISOLATION: Verify Business A cannot access Business B's records via API"""
+        LedgerEntry.objects.create(
+            business=self.business_a,
+            party_name="Party A",
+            transaction_type="RECEIVABLE",
+            amount=Decimal("1000.00")
+        )
+        LedgerEntry.objects.create(
+            business=self.business_b,
+            party_name="Party B",
+            transaction_type="RECEIVABLE",
+            amount=Decimal("2000.00")
+        )
+        
+        client = APIClient()
+        client.force_authenticate(user=self.user_a)
+        
+        # Request entries for Business A
+        url = reverse("ledger-entry-list")
+        response = client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should only see Business A's entry
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['party_name'], "Party A")

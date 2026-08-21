@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import xhtml2pdf.pisa as pisa
 
-from .models import BusinessProfile, Customer, Invoice
+from .models import BusinessProfile, Customer, Invoice, LedgerEntry, LedgerPayment
 from .serializers import (
     BusinessProfileSerializer,
     CustomerDetailSerializer,
@@ -31,6 +31,8 @@ from .serializers import (
     InvoiceCreateSerializer,
     InvoiceDetailSerializer,
     InvoiceListSerializer,
+    LedgerEntrySerializer,
+    LedgerPaymentSerializer,
 )
 from .filters import InvoiceFilter
 from .pagination import StandardResultsSetPagination
@@ -370,11 +372,11 @@ class InvoiceViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        response = HttpResponse(pdf_bytes, content_type="application/pdf")
-        filename = f"Invoice-{invoice.invoice_number}.pdf"
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-
-        return response
+        return Response(
+            pdf_bytes,
+            content_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="Invoice-{invoice.invoice_number}.pdf"'}
+        )
 
     # ── Google Drive ──────────────────────────────────────────
 
@@ -780,3 +782,43 @@ class GSTVerifyTestView(APIView):
             result["source"] = "api"
             
         return Response(result, status=status.HTTP_200_OK)
+
+# ─────────────────────────────────────────────────────────────
+# Ledger (Phase 1)
+# ─────────────────────────────────────────────────────────────
+
+class LedgerEntryViewSet(viewsets.ModelViewSet):
+    """
+    API endpoints for Ledger Entries.
+    Strictly isolated to the current user's business profile.
+    """
+    serializer_class = LedgerEntrySerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['party_name', 'customer__name', 'reference']
+    filterset_fields = ['transaction_type', 'status']
+
+    def get_queryset(self):
+        # Strict business isolation
+        user = self.request.user
+        if not hasattr(user, 'business_profile'):
+            return LedgerEntry.objects.none()
+        return LedgerEntry.objects.filter(business=user.business_profile).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(business=self.request.user.business_profile)
+
+
+class LedgerPaymentViewSet(viewsets.ModelViewSet):
+    """
+    API endpoints for Ledger Payments.
+    Strictly isolated to payments belonging to the current user's business.
+    """
+    serializer_class = LedgerPaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not hasattr(user, 'business_profile'):
+            return LedgerPayment.objects.none()
+        return LedgerPayment.objects.filter(ledger_entry__business=user.business_profile).order_by('-payment_date', '-created_at')

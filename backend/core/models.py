@@ -27,7 +27,10 @@ Design notes:
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Sum, Q
+from django.conf import settings
 from django.conf import settings
 
 
@@ -505,5 +508,154 @@ class InvoiceItem(models.Model):
             ),
         ]
 
+    def _calculate_total_tax(self):
+        return self.cgst_amount + self.sgst_amount + self.igst_amount
+
+# ─────────────────────────────────────────────────────────────
+# Ledger & Payments (Phase 1)
+# ─────────────────────────────────────────────────────────────
+
+class LedgerEntry(models.Model):
+    """
+    Represents a financial obligation (Receivable or Payable).
+    Tracks the original amount owed and provides dynamic status
+    calculation based on associated payments.
+    """
+    TRANSACTION_TYPES = [
+        ('RECEIVABLE', 'Receivable'),
+        ('PAYABLE', 'Payable'),
+    ]
+
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('PARTIALLY_PAID', 'Partially Paid'),
+        ('PAID', 'Paid'),
+    ]
+
+    business = models.ForeignKey(
+        BusinessProfile, 
+        on_delete=models.CASCADE, 
+        related_name="ledger_entries",
+        help_text="The business profile this ledger entry belongs to (for data isolation)."
+    )
+    
+    # Party resolution
+    customer = models.ForeignKey(
+        Customer, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="ledger_entries",
+        help_text="Linked customer (if the party is a registered customer)."
+    )
+    party_name = models.CharField(
+        max_length=255, 
+        blank=True, 
+        help_text="Name of the party if not a registered customer (e.g., external supplier or transporter)."
+    )
+    
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        validators=[MinValueValidator(Decimal("0.01"))],
+        help_text="Original transaction amount"
+    )
+    
+    reference = models.CharField(max_length=255, blank=True, help_text="Invoice number, PO number, or reason")
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Ledger Entries"
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='ledger_amount_positive')
+        ]
+        indexes = [
+            models.Index(fields=['business', 'status']),
+            models.Index(fields=['business', 'transaction_type']),
+            models.Index(fields=['business', 'created_at']),
+        ]
+
     def __str__(self):
-        return f"Item {self.serial_number}: {self.product_name} (Invoice #{self.invoice.invoice_number})"
+        party = self.party_name or (self.customer.name if self.customer else "Unknown Party")
+        return f"{self.transaction_type} | {party} | ₹{self.amount}"
+
+    def get_paid_amount(self):
+        return self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+
+    def get_remaining_amount(self):
+        return self.amount - self.get_paid_amount()
+
+    def update_status(self):
+        paid = self.get_paid_amount()
+        if paid >= self.amount:
+            self.status = 'PAID'
+        elif paid > 0:
+            self.status = 'PARTIALLY_PAID'
+        else:
+            self.status = 'PENDING'
+        self.save(update_fields=['status', 'updated_at'])
+
+
+class LedgerPayment(models.Model):
+    """
+    Represents an individual payment against a LedgerEntry.
+    """
+    PAYMENT_METHODS = [
+        ('CASH', 'Cash'),
+        ('UPI', 'UPI'),
+        ('BANK_TRANSFER', 'Bank Transfer'),
+        ('CHEQUE', 'Cheque'),
+        ('OTHER', 'Other'),
+    ]
+
+    ledger_entry = models.ForeignKey(
+        LedgerEntry, 
+        on_delete=models.RESTRICT, 
+        related_name="payments",
+        help_text="The ledger entry this payment applies to. RESTRICT prevents deleting a ledger if payments exist."
+    )
+    amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))]
+    )
+    payment_date = models.DateField()
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, blank=True)
+    notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['ledger_entry', 'payment_date']),
+        ]
+
+    def __str__(self):
+        return f"Payment of ₹{self.amount} on {self.payment_date}"
+
+    def clean(self):
+        super().clean()
+        if self.ledger_entry_id and self.amount:
+            if not self.pk:
+                current_paid = self.ledger_entry.get_paid_amount()
+                if current_paid + self.amount > self.ledger_entry.amount:
+                    raise ValidationError("Payment amount exceeds the remaining ledger balance.")
+            else:
+                other_paid = self.ledger_entry.payments.exclude(pk=self.pk).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+                if other_paid + self.amount > self.ledger_entry.amount:
+                    raise ValidationError("Updated payment amount exceeds the remaining ledger balance.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+        self.ledger_entry.update_status()
+
+    def delete(self, *args, **kwargs):
+        entry = self.ledger_entry
+        super().delete(*args, **kwargs)
+        entry.update_status()

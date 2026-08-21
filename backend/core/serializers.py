@@ -19,7 +19,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import BusinessProfile, Customer, Invoice, InvoiceItem, InvoiceStatus
+from .models import BusinessProfile, Customer, Invoice, InvoiceItem, InvoiceStatus, LedgerEntry, LedgerPayment
 from .services.calculation import amount_to_words, calculate_invoice_totals
 from .validators import validate_gstin, validate_ifsc, validate_phone
 
@@ -553,6 +553,49 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+# ─────────────────────────────────────────────────────────────
+# Ledger (Phase 1)
+# ─────────────────────────────────────────────────────────────
+
+class LedgerPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LedgerPayment
+        fields = [
+            'id',
+            'ledger_entry',
+            'amount',
+            'payment_date',
+            'payment_method',
+            'notes',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
+class LedgerEntrySerializer(serializers.ModelSerializer):
+    payments = LedgerPaymentSerializer(many=True, read_only=True)
+    paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='get_paid_amount')
+    remaining_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='get_remaining_amount')
+
+    class Meta:
+        model = LedgerEntry
+        fields = [
+            'id',
+            'business',
+            'customer',
+            'party_name',
+            'transaction_type',
+            'amount',
+            'reference',
+            'notes',
+            'status',
+            'paid_amount',
+            'remaining_amount',
+            'payments',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'business', 'status', 'created_at', 'updated_at', 'paid_amount', 'remaining_amount']
 # ─────────────────────────────────────────────────────────────
 # Invoice — List (read)
 # ─────────────────────────────────────────────────────────────

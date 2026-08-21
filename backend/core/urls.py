@@ -16,7 +16,9 @@ from .views import (
     GoogleDriveOAuthStartView,
     GoogleDriveOAuthCallbackView,
     GoogleDriveStatusView,
-    GSTVerifyTestView
+    GSTVerifyTestView,
+    LedgerEntryViewSet,
+    LedgerPaymentViewSet
 )
 
 # ── Dashboard ──────────────────────────────────────────────
@@ -46,6 +48,23 @@ invoice_upload_drive = InvoiceViewSet.as_view({"post": "upload_to_drive"})
 google_drive_oauth_start = GoogleDriveOAuthStartView.as_view()
 google_drive_oauth_callback = GoogleDriveOAuthCallbackView.as_view()
 google_drive_status = GoogleDriveStatusView.as_view()
+
+# ── Ledger (Phase 1) ───────────────────────────────────────
+ledger_entry_list = LedgerEntryViewSet.as_view({"get": "list", "post": "create"})
+ledger_entry_detail = LedgerEntryViewSet.as_view({
+    "get": "retrieve",
+    "put": "update",
+    "patch": "partial_update",
+    "delete": "destroy"
+})
+
+ledger_payment_list = LedgerPaymentViewSet.as_view({"get": "list", "post": "create"})
+ledger_payment_detail = LedgerPaymentViewSet.as_view({
+    "get": "retrieve",
+    "put": "update",
+    "patch": "partial_update",
+    "delete": "destroy"
+})
 
 urlpatterns = [
     # Dashboard
@@ -78,4 +97,12 @@ urlpatterns = [
     
     # External API Integrations (Phase 1)
     path("gst/verify/", GSTVerifyTestView.as_view(), name="gst-verify-test"),
+
+    # Ledger Entries
+    path("ledger-entries/", ledger_entry_list, name="ledger-entry-list"),
+    path("ledger-entries/<int:pk>/", ledger_entry_detail, name="ledger-entry-detail"),
+
+    # Ledger Payments
+    path("ledger-payments/", ledger_payment_list, name="ledger-payment-list"),
+    path("ledger-payments/<int:pk>/", ledger_payment_detail, name="ledger-payment-detail"),
 ]

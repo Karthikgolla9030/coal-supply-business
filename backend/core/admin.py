@@ -6,7 +6,7 @@ Django Admin configuration for core business models.
 
 from django.contrib import admin
 
-from .models import BusinessProfile, Customer, Invoice, InvoiceItem
+from .models import BusinessProfile, Customer, Invoice, InvoiceItem, LedgerEntry, LedgerPayment
 
 
 # ─────────────────────────────────────────────────────────────
