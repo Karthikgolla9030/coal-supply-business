@@ -54,6 +54,7 @@ MIDDLEWARE = [
     # CorsMiddleware must be before CommonMiddleware
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -88,16 +89,36 @@ WSGI_APPLICATION = "config.wsgi.application"
 # All values must be supplied via environment variables.
 # ─────────────────────────────────────────────
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", ""),
-        "USER": os.getenv("DB_USER", ""),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+import urllib.parse
+
+_db_url = os.getenv("DATABASE_URL")
+if _db_url:
+    _parsed = urllib.parse.urlparse(_db_url)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _parsed.path.lstrip("/"),
+            "USER": urllib.parse.unquote(_parsed.username or ""),
+            "PASSWORD": urllib.parse.unquote(_parsed.password or ""),
+            "HOST": _parsed.hostname or "localhost",
+            "PORT": str(_parsed.port or 5432),
+            "OPTIONS": {"sslmode": "require"},
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", ""),
+            "USER": os.getenv("DB_USER", ""),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
+    _pgsslmode = os.getenv("PGSSLMODE")
+    if _pgsslmode:
+        DATABASES["default"].setdefault("OPTIONS", {})["sslmode"] = _pgsslmode
 
 # ─────────────────────────────────────────────
 # Password validation
@@ -133,6 +154,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
