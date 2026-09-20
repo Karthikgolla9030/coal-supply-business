@@ -3,6 +3,7 @@ import FormField from '../components/FormField';
 import { getBusinessProfile, saveBusinessProfile } from '../api/businessProfile';
 import { INDIAN_STATES, getStateCode } from '../utils/states';
 import { CheckCircle, AlertCircle, Save, Cloud, Edit2, X } from 'lucide-react';
+import client from '../api/client';
 
 const INITIAL_FORM = {
   business_name: '',
@@ -85,12 +86,10 @@ export default function BusinessProfilePage() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    import('../api/client').then(({ default: client }) => {
-      client.get('/google-drive/status/')
-        .then(res => setDriveConnected(res.data.connected))
-        .catch(err => console.error("Drive status check failed", err))
-        .finally(() => setCheckingDrive(false));
-    });
+    client.get('/google-drive/status/')
+      .then(res => setDriveConnected(res.data.connected))
+      .catch(err => console.error("Drive status check failed", err))
+      .finally(() => setCheckingDrive(false));
   }, []);
 
   const handleChange = (e) => {
@@ -444,12 +443,10 @@ export default function BusinessProfilePage() {
               </p>
               <button 
                 type="button"
-                onClick={async () => {
-                  import('../api/client').then(({ default: client }) => {
-                    client.get('/google-drive/oauth/start/')
-                      .then(res => { window.location.href = res.data.url; })
-                      .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
-                  });
+                onClick={() => {
+                  client.get('/google-drive/oauth/start/')
+                    .then(res => { window.location.href = res.data.url; })
+                    .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
                 }}
                 className="btn" 
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-bg)' }}
@@ -467,12 +464,10 @@ export default function BusinessProfilePage() {
               </p>
               <button 
                 type="button"
-                onClick={async () => {
-                  import('../api/client').then(({ default: client }) => {
-                    client.get('/google-drive/oauth/start/')
-                      .then(res => { window.location.href = res.data.url; })
-                      .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
-                  });
+                onClick={() => {
+                  client.get('/google-drive/oauth/start/')
+                    .then(res => { window.location.href = res.data.url; })
+                    .catch(err => setAlert({ type: 'error', message: 'Failed to start Google Drive connection.' }));
                 }}
                 className="btn btn-primary" 
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', fontSize: '1rem', boxShadow: '0 4px 12px var(--color-primary-soft)' }}
