@@ -30,6 +30,13 @@ DEBUG = os.getenv("DEBUG", "False").strip().lower() in ("1", "true", "yes")
 _allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(",") if h.strip()]
 
+# Automatically support Render deployment domains
+render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
+if ".onrender.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".onrender.com")
+
 # ─────────────────────────────────────────────
 # Application definition
 # ─────────────────────────────────────────────

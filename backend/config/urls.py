@@ -9,7 +9,11 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 
+from config.views import root_view, favicon_view
+
 urlpatterns = [
+    path("", root_view, name="root"),
+    path("favicon.ico", favicon_view, name="favicon"),
     path("admin/", admin.site.urls),
     path("api/", include("config.api_urls")),
 ]
