@@ -231,6 +231,20 @@ SIMPLE_JWT = {
 _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
+# Automatically allow Vercel and Render preview and production domains
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
+]
+
+# CSRF trusted origins for secure form/cookie submission
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.vercel.app",
+    "https://*.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 # Allow credentials (cookies/session) to be sent cross-origin
 CORS_ALLOW_CREDENTIALS = True
 
