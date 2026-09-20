@@ -6,7 +6,7 @@ Django Admin configuration for core business models.
 
 from django.contrib import admin
 
-from .models import BusinessProfile, Customer, Invoice, InvoiceItem, LedgerEntry, LedgerPayment
+from .models import BusinessProfile, Customer, Supplier, Purchase, Sale, Expense, Invoice, InvoiceItem, LedgerEntry, LedgerPayment
 
 
 # ─────────────────────────────────────────────────────────────
@@ -58,6 +58,87 @@ class CustomerAdmin(admin.ModelAdmin):
         }),
     )
 
+# ─────────────────────────────────────────────────────────────
+# Supplier
+# ─────────────────────────────────────────────────────────────
+
+@admin.register(Supplier)
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ("name", "phone", "gstin", "state", "is_active", "created_at")
+    search_fields = ("name", "phone", "gstin", "aadhaar_no")
+    list_filter = ("state", "is_active")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Supplier Information", {
+            "fields": ("business", "name", "address", "state", "pincode", "notes", "is_active"),
+        }),
+        ("Identifiers & Contact", {
+            "fields": ("phone", "gstin", "aadhaar_no"),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# Purchase
+# ─────────────────────────────────────────────────────────────
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = ("purchase_date", "supplier", "purchase_order_no", "truck_no", "quantity_tons", "total_amount", "is_active")
+    search_fields = ("supplier__name", "purchase_order_no", "serial_no", "truck_no")
+    list_filter = ("purchase_date", "is_active", "supplier")
+    readonly_fields = ("purchase_amount", "gst_amount", "total_amount", "created_at", "updated_at")
+    fieldsets = (
+        ("Purchase Information", {
+            "fields": ("business", "supplier", "purchase_date", "is_active"),
+        }),
+        ("Delivery Details", {
+            "fields": ("purchase_order_no", "serial_no", "truck_no"),
+        }),
+        ("Quantities & Rates", {
+            "fields": ("quantity_tons", "rate_per_ton", "purchase_amount"),
+        }),
+        ("Tax & Totals", {
+            "fields": ("gst_rate", "gst_amount", "total_amount"),
+        }),
+        ("Notes & Timestamps", {
+            "fields": ("notes", "created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+# ─────────────────────────────────────────────────────────────
+# Sale
+# ─────────────────────────────────────────────────────────────
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ("sale_date", "customer", "sale_order_no", "truck_no", "quantity_tons", "total_amount", "is_active")
+    search_fields = ("customer__name", "sale_order_no", "serial_no", "truck_no")
+    list_filter = ("sale_date", "is_active", "customer")
+    readonly_fields = ("sale_amount", "gst_amount", "total_amount", "created_at", "updated_at")
+    fieldsets = (
+        ("Sale Information", {
+            "fields": ("business", "customer", "sale_date", "is_active"),
+        }),
+        ("Delivery Details", {
+            "fields": ("sale_order_no", "serial_no", "truck_no"),
+        }),
+        ("Quantities & Rates", {
+            "fields": ("quantity_tons", "rate_per_ton", "sale_amount"),
+        }),
+        ("Tax & Totals", {
+            "fields": ("gst_rate", "gst_amount", "total_amount"),
+        }),
+        ("Notes & Timestamps", {
+            "fields": ("notes", "created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
 
 # ─────────────────────────────────────────────────────────────
 # InvoiceItem (inline for Invoice admin)
@@ -69,6 +150,32 @@ class InvoiceItemInline(admin.TabularInline):
     fields = ("serial_number", "product_name", "hsn_code", "quantity", "unit", "rate", "amount")
     ordering = ("serial_number",)
 
+
+# ─────────────────────────────────────────────────────────────
+# Expense
+# ─────────────────────────────────────────────────────────────
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ("id", "business", "expense_date", "category", "amount", "paid_to", "is_active")
+    list_filter = ("category", "is_active")
+    search_fields = ("description", "paid_to", "reference_no")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Expense Details", {
+            "fields": ("business", "expense_date", "category", "description", "amount", "paid_to", "reference_no"),
+        }),
+        ("Relationships", {
+            "fields": ("supplier", "customer", "purchase", "sale"),
+        }),
+        ("Additional Information", {
+            "fields": ("notes", "is_active"),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
 
 # ─────────────────────────────────────────────────────────────
 # Invoice

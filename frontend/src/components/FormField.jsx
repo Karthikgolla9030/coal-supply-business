@@ -21,12 +21,17 @@ export default function FormField({
   className,   // consumed here — NOT forwarded to inner element
   ...rest
 }) {
+  // Prevent duplicate asterisks if label string already ends with * or if required is passed
+  const hasAsteriskInLabel = typeof label === 'string' && /\*\s*$/.test(label);
+  const cleanLabel = typeof label === 'string' ? label.replace(/\s*\*+\s*$/, '') : label;
+  const isRequired = Boolean(required || hasAsteriskInLabel);
+
   return (
     <div className={`form-field${wrapperClassName ? ` ${wrapperClassName}` : ''}`}>
-      {label && (
-        <label className="form-label">
-          {label}
-          {required && <span className="required">*</span>}
+      {cleanLabel && (
+        <label className="form-label" htmlFor={rest.id}>
+          {cleanLabel}
+          {isRequired && <span className="required"> *</span>}
         </label>
       )}
       {rightElement ? (
@@ -34,6 +39,10 @@ export default function FormField({
           <Tag
             className={`${Tag === 'textarea' ? 'form-textarea' : 'form-input'}${error ? ' error' : ''}`}
             style={{ paddingRight: '2.5rem' }}
+            onWheel={(e) => {
+              if (rest.type === 'number') e.target.blur();
+              if (rest.onWheel) rest.onWheel(e);
+            }}
             {...rest}
           />
           {rightElement}
@@ -41,6 +50,10 @@ export default function FormField({
       ) : (
         <Tag
           className={`${Tag === 'textarea' ? 'form-textarea' : 'form-input'}${error ? ' error' : ''}`}
+          onWheel={(e) => {
+            if (rest.type === 'number') e.target.blur();
+            if (rest.onWheel) rest.onWheel(e);
+          }}
           {...rest}
         />
       )}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ report_type }}</title>
+    <style>
+        @page {
+            size: a4 landscape;
+            margin: 2cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2cm;
+                margin-right: 2cm;
+                height: 1cm;
+            }
+        }
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 9pt;
+            color: #333333;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .business-name {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        .business-details {
+            font-size: 9pt;
+            color: #4a5568;
+        }
+        .report-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .report-meta {
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+        .summary-box {
+            border: 1px solid #cbd5e0;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f7fafc;
+        }
+        .summary-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 11pt;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 6px;
+            text-align: left;
+        }
+        th {
+            background-color: #edf2f7;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        td {
+            font-size: 8pt;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .no-records {
+            text-align: center;
+            padding: 30px;
+            color: #718096;
+            font-style: italic;
+        }
+        #footerContent {
+            text-align: center;
+            font-size: 8pt;
+            color: #a0aec0;
+        }
+        
+        .summary-grid {
+            display: block;
+        }
+        .summary-item {
+            margin-bottom: 5px;
+        }
+        .summary-label {
+            display: inline-block;
+            width: 200px;
+            color: #4a5568;
+        }
+        .summary-value {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="business-name">{{ business.business_name|upper }}</div>
+        <div class="business-details">
+            {% if business.address %}{{ business.address }}{% endif %}
+            {% if business.state %}, {{ business.state }}{% endif %}
+            {% if business.pincode %} - {{ business.pincode }}{% endif %}
+        </div>
+        {% if business.gstin %}
+        <div class="business-details">GSTIN: {{ business.gstin }}</div>
+        {% endif %}
+        {% if business.phone %}
+        <div class="business-details">Phone: {{ business.phone }}</div>
+        {% endif %}
+    </div>
+
+    <div class="report-title">
+        {{ report_type|upper }}
+    </div>
+
+    <div class="report-meta">
+        <strong>Period:</strong> {{ date_range_label }}<br>
+        <strong>Generated on:</strong> {{ generated_date }}
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-title">Report Summary</div>
+        <div class="summary-grid">
+            {% for key, value in summary.items %}
+            <div class="summary-item">
+                <span class="summary-label">{{ key }}:</span>
+                <span class="summary-value">
+                    {% if value|stringformat:"s"|slice:":1" in "0123456789" and "." in value|stringformat:"s" and "MT" not in value|stringformat:"s" and "%" not in value|stringformat:"s" %}
+                        &#8377;{{ value|floatformat:2 }}
+                    {% elif value == 0 or value == 0.0 %}
+                        &#8377;0.00
+                    {% else %}
+                        {{ value }}
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if rows %}
+    <table>
+        <thead>
+            <tr>
+                {% for key, value in rows.0.items %}
+                <th>{{ key }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for key, value in row.items %}
+                        {% if value|stringformat:"s"|slice:":1" in "0123456789" and "." in value|stringformat:"s" and "MT" not in value|stringformat:"s" and "%" not in value|stringformat:"s" %}
+                            <td class="text-right">&#8377;{{ value|floatformat:2 }}</td>
+                        {% elif value == 0 or value == 0.0 %}
+                            <td class="text-right">&#8377;0.00</td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif report_type != "Profit & Loss" %}
+    <div class="no-records">
+        No records found for the selected period and filters.
+    </div>
+    {% endif %}
+
+    <div id="footerContent">
+        Generated by {{ business.business_name }} | Page <pdf:pagenumber> of <pdf:pagecount>
+    </div>
+
+</body>
+</html>

@@ -19,7 +19,20 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import BusinessProfile, Customer, Invoice, InvoiceItem, InvoiceStatus, LedgerEntry, LedgerPayment
+from .models import (
+    BusinessProfile,
+    Customer,
+    Supplier,
+    Purchase,
+    Sale,
+    Expense,
+    Invoice,
+    InvoiceItem,
+    InvoiceStatus,
+    LedgerEntry,
+    LedgerPayment,
+    AuditLog,
+)
 from .services.calculation import amount_to_words, calculate_invoice_totals
 from .validators import validate_gstin, validate_ifsc, validate_phone
 
@@ -56,7 +69,7 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "owner", "created_at", "updated_at"]
 
     def validate_pincode(self, value: str) -> str:
         """Ensure pincode is either empty or exactly 6 digits."""
@@ -94,16 +107,15 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
 class CustomerListSerializer(serializers.ModelSerializer):
     """
     Compact serializer for the customer list view.
-
-    Returns only the fields needed for the table display:
-    name, GSTIN, phone, state, status.
     """
+    financial_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
         fields = [
             "id",
             "name",
+            "party_type",
             "gst_registered",
             "gstin",
             "aadhaar_no",
@@ -111,8 +123,56 @@ class CustomerListSerializer(serializers.ModelSerializer):
             "state",
             "is_active",
             "created_at",
+            "financial_summary"
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "financial_summary"]
+        
+    def get_financial_summary(self, obj):
+        party_type = getattr(obj, 'party_type', 'CUSTOMER')
+        
+        total_receivable = float(getattr(obj, 'total_receivable', 0) or 0)
+        total_received = float(getattr(obj, 'total_received', 0) or 0)
+        total_payable = float(getattr(obj, 'total_payable', 0) or 0)
+        total_paid = float(getattr(obj, 'total_paid', 0) or 0)
+        
+        status_label = "PENDING"
+        outstanding = 0
+        
+        if party_type == 'CUSTOMER':
+            outstanding = max(0, total_receivable - total_received)
+            if total_receivable > 0:
+                if outstanding == 0:
+                    status_label = "PAID"
+                elif total_received > 0:
+                    status_label = "PARTIALLY_PAID"
+            return {
+                "total_invoiced": total_receivable,
+                "total_paid": total_received,
+                "outstanding": outstanding,
+                "status": status_label
+            }
+        elif party_type in ['SUPPLIER', 'TRANSPORTER']:
+            outstanding = max(0, total_payable - total_paid)
+            if total_payable > 0:
+                if outstanding == 0:
+                    status_label = "PAID"
+                elif total_paid > 0:
+                    status_label = "PARTIALLY_PAID"
+            return {
+                "total_payable": total_payable,
+                "total_paid": total_paid,
+                "outstanding": outstanding,
+                "status": status_label
+            }
+        else:
+            # OTHER
+            outstanding = (total_receivable - total_received) - (total_payable - total_paid)
+            return {
+                "total_receivable": total_receivable,
+                "total_payable": total_payable,
+                "outstanding": outstanding,
+                "status": "PENDING"
+            }
 
 
 # ─────────────────────────────────────────────────────────────
@@ -129,16 +189,19 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
     Non-blank GSTINs are flagged as potential duplicates via a warning
     in validate_gstin but are not hard-rejected at the serializer layer.
     """
+    financial_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
         fields = [
             "id",
             "name",
+            "party_type",
             "address",
             "gst_registered",
             "gstin",
             "gst_verified",
+            "financial_summary",
             "gst_verified_at",
             "gst_status",
             "gst_legal_name",
@@ -153,6 +216,52 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "gst_verified_at"]
+
+    def get_financial_summary(self, obj):
+        party_type = getattr(obj, 'party_type', 'CUSTOMER')
+        
+        total_receivable = float(getattr(obj, 'total_receivable', 0) or 0)
+        total_received = float(getattr(obj, 'total_received', 0) or 0)
+        total_payable = float(getattr(obj, 'total_payable', 0) or 0)
+        total_paid = float(getattr(obj, 'total_paid', 0) or 0)
+        
+        status_label = "PENDING"
+        outstanding = 0
+        
+        if party_type == 'CUSTOMER':
+            outstanding = max(0, total_receivable - total_received)
+            if total_receivable > 0:
+                if outstanding == 0:
+                    status_label = "PAID"
+                elif total_received > 0:
+                    status_label = "PARTIALLY_PAID"
+            return {
+                "total_invoiced": total_receivable,
+                "total_paid": total_received,
+                "outstanding": outstanding,
+                "status": status_label
+            }
+        elif party_type in ['SUPPLIER', 'TRANSPORTER']:
+            outstanding = max(0, total_payable - total_paid)
+            if total_payable > 0:
+                if outstanding == 0:
+                    status_label = "PAID"
+                elif total_paid > 0:
+                    status_label = "PARTIALLY_PAID"
+            return {
+                "total_payable": total_payable,
+                "total_paid": total_paid,
+                "outstanding": outstanding,
+                "status": status_label
+            }
+        else:
+            outstanding = (total_receivable - total_received) - (total_payable - total_paid)
+            return {
+                "total_receivable": total_receivable,
+                "total_payable": total_payable,
+                "outstanding": outstanding,
+                "status": "PENDING"
+            }
 
     def validate_name(self, value: str) -> str:
         if not value or not value.strip():
@@ -479,25 +588,255 @@ class InvoiceCreateSerializer(serializers.Serializer):
         ]
         InvoiceItem.objects.bulk_create(item_objects)
 
-        # ── Automatic Ledger Integration ──────────────────────
-        # Only create a ledger entry if this is a standard invoice (sales = receivable).
-        # We ensure exactly one ledger entry per invoice using the OneToOneField relationship.
-        LedgerEntry.objects.create(
-            business=business,
-            customer=customer,
-            invoice=invoice,
-            transaction_type='RECEIVABLE',
-            amount=totals.total_amount,
-            reference=f"Invoice {invoice.invoice_number}",
-            status='PENDING'
-        )
-
         return invoice
 
 
 # ─────────────────────────────────────────────────────────────
-# InvoiceItem — Read
+# Supplier
 # ─────────────────────────────────────────────────────────────
+
+class SupplierListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "gstin",
+            "aadhaar_no",
+            "state",
+            "is_active",
+        ]
+        read_only_fields = fields
+
+class SupplierDetailSerializer(serializers.ModelSerializer):
+    """
+    Full serializer for supplier create, retrieve, and partial update.
+    Does NOT strictly enforce GSTIN mandatory presence.
+    """
+    phone = serializers.CharField(max_length=20, allow_blank=True, allow_null=False, required=False, default="")
+    gstin = serializers.CharField(max_length=15, allow_blank=True, allow_null=False, required=False, default="")
+    aadhaar_no = serializers.CharField(max_length=12, allow_blank=True, allow_null=False, required=False, default="")
+    state = serializers.CharField(max_length=100, allow_blank=True, allow_null=False, required=False, default="")
+    pincode = serializers.CharField(max_length=10, allow_blank=True, allow_null=False, required=False, default="")
+    notes = serializers.CharField(allow_blank=True, allow_null=False, required=False, default="")
+    class Meta:
+        model = Supplier
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "gstin",
+            "aadhaar_no",
+            "address",
+            "state",
+            "pincode",
+            "notes",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_gstin(self, value):
+        if value:
+            validate_gstin(value)
+        return value.upper() if value else ""
+
+    def validate_phone(self, value):
+        if value:
+            validate_phone(value)
+        return value
+
+
+# ─────────────────────────────────────────────────────────────
+# Purchase
+# ─────────────────────────────────────────────────────────────
+
+class PurchaseListSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+
+    class Meta:
+        model = Purchase
+        fields = [
+            "id",
+            "purchase_date",
+            "supplier",
+            "supplier_name",
+            "purchase_order_no",
+            "serial_no",
+            "truck_no",
+            "quantity_tons",
+            "rate_per_ton",
+            "total_amount",
+            "is_active",
+        ]
+        read_only_fields = fields
+
+class PurchaseDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Purchase create/update/retrieve.
+    """
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+
+    class Meta:
+        model = Purchase
+        fields = [
+            "id",
+            "supplier",
+            "supplier_name",
+            "purchase_date",
+            "purchase_order_no",
+            "serial_no",
+            "truck_no",
+            "quantity_tons",
+            "rate_per_ton",
+            "purchase_amount",
+            "gst_rate",
+            "gst_amount",
+            "total_amount",
+            "notes",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "supplier_name",
+            "purchase_amount",
+            "gst_amount",
+            "total_amount",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
+        if data.get('gst_rate') in ('', None):
+            data['gst_rate'] = '0.00'
+        return super().to_internal_value(data)
+
+    def validate(self, data):
+        # We don't need to recalculate here because it happens in model.save(),
+        # but we must ensure required fields are present if it's a create.
+        return data
+
+
+# ─────────────────────────────────────────────────────────────
+# InvoiceItem — Write
+# ─────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────
+# Sale
+# ─────────────────────────────────────────────────────────────
+
+class SaleListSerializer(serializers.ModelSerializer):
+    """
+    Summary view of sales for the list/table endpoint.
+    """
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    receivable_id = serializers.IntegerField(source="receivable.id", read_only=True)
+    receivable_status = serializers.CharField(source="receivable.status", read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = [
+            "id",
+            "sale_date",
+            "customer",
+            "customer_name",
+            "sale_order_no",
+            "truck_no",
+            "payment_type",
+            "quantity_tons",
+            "rate_per_ton",
+            "sale_amount",
+            "gst_rate",
+            "gst_amount",
+            "tcs_rate",
+            "tcs_amount",
+            "total_amount",
+            "is_active",
+            "receivable_id",
+            "receivable_status",
+        ]
+        read_only_fields = fields
+
+
+class SaleDetailSerializer(serializers.ModelSerializer):
+    """
+    Full details for creating/updating/viewing a single sale.
+    """
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    receivable_id = serializers.IntegerField(source="receivable.id", read_only=True)
+    receivable_status = serializers.CharField(source="receivable.status", read_only=True)
+    receivable_paid = serializers.DecimalField(source="receivable.get_paid_amount", max_digits=12, decimal_places=2, read_only=True)
+    receivable_remaining = serializers.DecimalField(source="receivable.get_remaining_amount", max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Sale
+        fields = [
+            "id",
+            "business",
+            "customer",
+            "customer_name",
+            "sale_date",
+            "sale_order_no",
+            "serial_no",
+            "truck_no",
+            "payment_type",
+            "quantity_tons",
+            "rate_per_ton",
+            "sale_amount",
+            "gst_rate",
+            "gst_amount",
+            "tcs_rate",
+            "tcs_amount",
+            "total_amount",
+            "notes",
+            "is_active",
+            "receivable_id",
+            "receivable_status",
+            "receivable_paid",
+            "receivable_remaining",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "business",
+            "customer_name",
+            "sale_amount",
+            "gst_amount",
+            "tcs_amount",
+            "total_amount",
+            "receivable_id",
+            "receivable_status",
+            "receivable_paid",
+            "receivable_remaining",
+            "created_at",
+            "updated_at",
+        ]
+
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, 'copy') else dict(data)
+        if data.get('gst_rate') in ('', None):
+            data['gst_rate'] = '0.00'
+        if data.get('tcs_rate') in ('', None):
+            data['tcs_rate'] = '0.00'
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and hasattr(request.user, 'business_profile'):
+            business = request.user.business_profile
+            # If a customer is provided, ensure it belongs to the same business
+            customer = attrs.get('customer')
+            if customer and customer.business_id != business.id:
+                raise serializers.ValidationError({"customer": "Selected customer does not belong to your business."})
+        return super().validate(attrs)
+
 
 class InvoiceItemReadSerializer(serializers.ModelSerializer):
     """Read-only representation of a saved InvoiceItem."""
@@ -530,7 +869,6 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     items    = InvoiceItemReadSerializer(many=True, read_only=True)
     business = BusinessProfileSerializer(read_only=True)
     customer = CustomerDetailSerializer(read_only=True)
-    ledger_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -563,20 +901,10 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "items",
             "created_at",
             "updated_at",
-            "ledger_status",
         ]
         read_only_fields = fields
 
-    def get_ledger_status(self, obj):
-        if hasattr(obj, 'ledger_entry') and obj.ledger_entry:
-            return {
-                "id": obj.ledger_entry.id,
-                "amount": obj.ledger_entry.amount,
-                "paid_amount": obj.ledger_entry.get_paid_amount(),
-                "remaining_amount": obj.ledger_entry.get_remaining_amount(),
-                "status": obj.ledger_entry.status,
-            }
-        return None
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -593,15 +921,19 @@ class LedgerPaymentSerializer(serializers.ModelSerializer):
             'payment_date',
             'payment_method',
             'notes',
+            'proof_document',
+            'status',
             'created_at',
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'status', 'created_at']
 
 
 class LedgerEntrySerializer(serializers.ModelSerializer):
     payments = LedgerPaymentSerializer(many=True, read_only=True)
     paid_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='get_paid_amount')
     remaining_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True, source='get_remaining_amount')
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    customer_phone = serializers.CharField(source='customer.phone', read_only=True)
 
     class Meta:
         model = LedgerEntry
@@ -609,9 +941,19 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
             'id',
             'business',
             'customer',
+            'customer_name',
+            'customer_phone',
             'party_name',
             'transaction_type',
             'amount',
+            'tcs_rate',
+            'tcs_amount',
+            'sale_order_no',
+            'purchase_order_no',
+            'serial_no',
+            'truck_no',
+            'entry_date',
+            'tons',
             'reference',
             'notes',
             'status',
@@ -619,10 +961,31 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
             'remaining_amount',
             'payments',
             'invoice',
+            'sale',
             'created_at',
             'updated_at',
         ]
         read_only_fields = ['id', 'business', 'status', 'created_at', 'updated_at', 'paid_amount', 'remaining_amount']
+
+# ─────────────────────────────────────────────────────────────
+# Audit Log (Phase 8)
+# ─────────────────────────────────────────────────────────────
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True, default='System')
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id',
+            'user_name',
+            'action',
+            'record_type',
+            'record_id',
+            'timestamp',
+            'details'
+        ]
+        read_only_fields = fields
 # ─────────────────────────────────────────────────────────────
 # Invoice — List (read)
 # ─────────────────────────────────────────────────────────────
@@ -651,3 +1014,78 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+
+# ─────────────────────────────────────────────────────────────
+# Expense
+# ─────────────────────────────────────────────────────────────
+
+class ExpenseListSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    purchase_order = serializers.CharField(source="purchase.purchase_order_no", read_only=True)
+    sale_order = serializers.CharField(source="sale.sale_order_no", read_only=True)
+
+    class Meta:
+        model = Expense
+        fields = [
+            "id",
+            "expense_date",
+            "category",
+            "description",
+            "amount",
+            "paid_to",
+            "reference_no",
+            "supplier_name",
+            "customer_name",
+            "purchase_order",
+            "sale_order",
+            "is_active",
+        ]
+        read_only_fields = fields
+
+
+class ExpenseDetailSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    purchase_order = serializers.CharField(source="purchase.purchase_order_no", read_only=True)
+    sale_order = serializers.CharField(source="sale.sale_order_no", read_only=True)
+
+    class Meta:
+        model = Expense
+        fields = [
+            "id",
+            "expense_date",
+            "category",
+            "description",
+            "amount",
+            "paid_to",
+            "reference_no",
+            "supplier",
+            "supplier_name",
+            "customer",
+            "customer_name",
+            "purchase",
+            "purchase_order",
+            "sale",
+            "sale_order",
+            "notes",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if request and hasattr(request.user, "business_profile"):
+            biz = request.user.business_profile
+            if attrs.get("supplier") and attrs["supplier"].business != biz:
+                raise serializers.ValidationError({"supplier": "Supplier does not belong to this business."})
+            if attrs.get("customer") and attrs["customer"].business != biz:
+                raise serializers.ValidationError({"customer": "Customer does not belong to this business."})
+            if attrs.get("purchase") and attrs["purchase"].business != biz:
+                raise serializers.ValidationError({"purchase": "Purchase does not belong to this business."})
+            if attrs.get("sale") and attrs["sale"].business != biz:
+                raise serializers.ValidationError({"sale": "Sale does not belong to this business."})
+        return attrs

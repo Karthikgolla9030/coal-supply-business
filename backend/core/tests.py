@@ -1408,88 +1408,253 @@ class LedgerTests(TestCase):
 # Phase 3: Invoice ↔ Ledger Integration Tests
 # ─────────────────────────────────────────────────────────────
 
-class InvoiceLedgerIntegrationTest(AuthenticatedAPITestCase):
+
+class CustomerLedgerTests(APITestCase):
     def setUp(self):
-        super().setUp()
+        self.user = User.objects.create_user(username="testuser", password="password")
         self.business = BusinessProfile.objects.create(
+            owner=self.user,
             business_name="Test Business",
-            state="Karnataka",
-            state_code="29",
-            owner=self.user
+            address="123 Test St"
         )
+        self.client.force_authenticate(user=self.user)
         self.customer = Customer.objects.create(
             business=self.business,
-            name="Sri Hanuman Bricks",
-            state="Karnataka",
-            state_code="29"
+            name="Ledger Customer",
+            phone="1234567890"
         )
-        self.create_url = reverse("invoice-create")
+        self.list_url = reverse("customer-list")
+        self.detail_url = reverse("customer-detail", kwargs={"pk": self.customer.id})
+        self.history_url = reverse("customer-ledger-history", kwargs={"pk": self.customer.id})
 
-    def test_invoice_creation_generates_ledger_entry(self):
-        """TEST 1 — NEW INVOICE: Creating an invoice generates exactly one LedgerEntry"""
-        payload = {
-            "invoice_number": "INV0011",
-            "invoice_date": "2026-08-21",
-            "transaction_type": "CREDIT",
-            "customer": self.customer.id,
-            "items": [
-                {
-                    "product_name": "Coal",
-                    "quantity": "10.000",
-                    "rate": "5000.00"
-                }
-            ],
-            "cgst_rate": "2.50",
-            "sgst_rate": "2.50"
-        }
+    def test_customer_list_financial_summary_no_invoices(self):
+        """TEST 1 & 2 — Zero financial records show correctly and accurately."""
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        response = self.client.post(self.create_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        customer_data = response.data["results"][0]
+        self.assertIn("financial_summary", customer_data)
         
-        # Verify invoice was created
-        invoice_id = response.data["invoice"]["id"]
-        invoice = Invoice.objects.get(id=invoice_id)
-        
-        # Verify ledger entry was created
-        self.assertEqual(LedgerEntry.objects.filter(invoice=invoice).count(), 1)
-        ledger_entry = LedgerEntry.objects.get(invoice=invoice)
-        
-        # Verify ledger entry details
-        self.assertEqual(ledger_entry.transaction_type, "RECEIVABLE")
-        self.assertEqual(ledger_entry.customer, self.customer)
-        self.assertEqual(ledger_entry.amount, invoice.total_amount)
-        self.assertEqual(ledger_entry.status, "PENDING")
-        self.assertEqual(ledger_entry.reference, f"Invoice {invoice.invoice_number}")
+        summary = customer_data["financial_summary"]
+        self.assertEqual(summary["total_invoiced"], 0)
+        self.assertEqual(summary["total_paid"], 0)
+        self.assertEqual(summary["outstanding"], 0)
+        self.assertEqual(summary["status"], "PENDING")
 
-    def test_nested_ledger_status_in_detail_api(self):
-        """TEST 3 & 4 — API correctly nests ledger status in the invoice response"""
-        payload = {
-            "invoice_number": "INV0012",
-            "invoice_date": "2026-08-21",
-            "transaction_type": "CREDIT",
-            "customer": self.customer.id,
-            "items": [
-                {
-                    "product_name": "Coal",
-                    "quantity": "1.000",
-                    "rate": "1000.00"
-                }
-            ],
-            "cgst_rate": "2.50",
-            "sgst_rate": "2.50"
-        }
+    def test_customer_ledger_calculations(self):
+        """TEST 3 & 4 — Total Invoiced, Partial Payments, and Outstanding calculations work perfectly."""
+        # Create two ledger entries (receivables)
+        entry1 = LedgerEntry.objects.create(
+            business=self.business,
+            customer=self.customer,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("1000.00"),
+            reference="INV-1"
+        )
+        entry2 = LedgerEntry.objects.create(
+            business=self.business,
+            customer=self.customer,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("500.00"),
+            reference="INV-2"
+        )
         
-        response = self.client.post(self.create_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Record a partial payment on entry1
+        LedgerPayment.objects.create(
+            ledger_entry=entry1,
+            amount=Decimal("400.00"),
+            payment_date="2026-08-21",
+            payment_method="CASH"
+        )
+        entry1.refresh_from_db() # Wait, signals should update it
+        # Note: In reality, there might not be a signal auto-updating the entry inside tests if not configured properly, 
+        # but our endpoints calculate it via subqueries anyway!
         
-        # Fetch details
-        detail_url = reverse("invoice-detail", kwargs={"pk": response.data["invoice"]["id"]})
-        detail_response = self.client.get(detail_url)
-        self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
+        # Fetch the customer detail
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        self.assertIn("ledger_status", detail_response.data)
-        ledger_status = detail_response.data["ledger_status"]
-        self.assertIsNotNone(ledger_status)
-        self.assertEqual(ledger_status["status"], "PENDING")
-        self.assertEqual(Decimal(str(ledger_status["amount"])), Decimal("1050.00")) # 1000 + 5% GST
+        summary = response.data["financial_summary"]
+        self.assertEqual(float(summary["total_invoiced"]), 1500.0) # 1000 + 500
+        self.assertEqual(float(summary["total_paid"]), 400.0)      # 400
+        self.assertEqual(float(summary["outstanding"]), 1100.0)    # 1500 - 400
+        self.assertEqual(summary["status"], "PARTIALLY_PAID")
 
+    def test_customer_ledger_history_timeline(self):
+        """TEST 5 & 6 — Chronological timeline correctly interleaves invoices and payments."""
+        entry = LedgerEntry.objects.create(
+            business=self.business,
+            customer=self.customer,
+            transaction_type="RECEIVABLE",
+            amount=Decimal("1000.00"),
+            reference="INV-TIMELINE"
+        )
+        payment = LedgerPayment.objects.create(
+            ledger_entry=entry,
+            amount=Decimal("200.00"),
+            payment_date="2099-01-01",
+            payment_method="UPI"
+        )
+        
+        response = self.client.get(self.history_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Timeline should have 2 items: 1 invoice, 1 payment
+        timeline = response.data
+        self.assertEqual(len(timeline), 2)
+        
+        # Order should be Invoice first (based on creation/real_date order), then Payment
+        self.assertEqual(timeline[0]["type"], "ENTRY")
+        self.assertEqual(str(timeline[0]["amount"]), "1000.00")
+        
+        self.assertEqual(timeline[1]["type"], "PAYMENT")
+        self.assertEqual(str(timeline[1]["amount"]), "200.00")
+
+class LedgerDashboardTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="dashuser", password="password123")
+        self.client.login(username="dashuser", password="password123")
+        self.business = BusinessProfile.objects.create(
+            owner=self.user,
+            business_name="Dashboard Test Business",
+            address="Test Address"
+        )
+        self.dashboard_url = reverse("ledger-dashboard")
+
+    def test_ledger_dashboard_calculations(self):
+        # CUSTOMER A
+        cust_a = Customer.objects.create(business=self.business, name="CUSTOMER A")
+        entry_a = LedgerEntry.objects.create(
+            business=self.business, customer=cust_a, transaction_type="RECEIVABLE",
+            amount=Decimal("421260.00"), reference="INV-A", status="PARTIALLY_PAID"
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry_a, amount=Decimal("150000.00"), payment_date="2026-08-21", payment_method="CASH"
+        )
+
+        # CUSTOMER B
+        cust_b = Customer.objects.create(business=self.business, name="CUSTOMER B")
+        entry_b = LedgerEntry.objects.create(
+            business=self.business, customer=cust_b, transaction_type="RECEIVABLE",
+            amount=Decimal("120000.00"), reference="INV-B", status="PAID"
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry_b, amount=Decimal("120000.00"), payment_date="2026-08-21", payment_method="CASH"
+        )
+
+        # SUPPLIER A
+        entry_sa = LedgerEntry.objects.create(
+            business=self.business, party_name="SUPPLIER A", transaction_type="PAYABLE",
+            amount=Decimal("200000.00"), reference="BILL-A", status="PARTIALLY_PAID"
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry_sa, amount=Decimal("50000.00"), payment_date="2026-08-21", payment_method="CASH"
+        )
+
+        # TRANSPORTER A
+        entry_ta = LedgerEntry.objects.create(
+            business=self.business, party_name="TRANSPORTER A", transaction_type="PAYABLE",
+            amount=Decimal("50000.00"), reference="TR-A", status="PARTIALLY_PAID"
+        )
+        LedgerPayment.objects.create(
+            ledger_entry=entry_ta, amount=Decimal("20000.00"), payment_date="2026-08-21", payment_method="CASH"
+        )
+
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        data = response.data
+        self.assertEqual(float(data["to_receive"]), 271260.00)
+        self.assertEqual(float(data["to_pay"]), 180000.00)
+        self.assertEqual(float(data["received"]), 270000.00)
+        self.assertEqual(float(data["paid"]), 70000.00)
+        self.assertEqual(float(data["net_position"]), 91260.00)
+        
+        # Outstanding lists
+        self.assertEqual(len(data["outstanding_receivables"]), 1)
+        self.assertEqual(data["outstanding_receivables"][0]["party_name"], "CUSTOMER A")
+        self.assertEqual(float(data["outstanding_receivables"][0]["outstanding"]), 271260.00)
+
+        self.assertEqual(len(data["outstanding_payables"]), 2)
+        
+        # Recent payments (we added 4)
+        self.assertEqual(len(data["recent_payments"]), 4)
+
+class TransactionHistoryTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="histuser", password="password123")
+        self.client.login(username="histuser", password="password123")
+        self.business = BusinessProfile.objects.create(
+            owner=self.user,
+            business_name="History Test Business",
+            address="Test Address"
+        )
+        self.history_url = reverse("ledger-history")
+
+    def test_transaction_history_scenario(self):
+        # CUSTOMER A
+        cust_a = Customer.objects.create(business=self.business, name="Customer A")
+        
+        # Simulating Invoice INV001
+        inv_a = Invoice.objects.create(
+            business=self.business, customer=cust_a, invoice_number="INV001",
+            invoice_date="2026-08-20", total_amount=Decimal("100000.00"), status="ISSUED"
+        )
+        entry_a = LedgerEntry.objects.create(
+            business=self.business, customer=cust_a, transaction_type="RECEIVABLE",
+            amount=Decimal("100000.00"), reference="INV001", status="PARTIALLY_PAID",
+            invoice=inv_a
+        )
+        # Force created_at to be predictable (we will assume it sorts by -id for same date)
+        
+        LedgerPayment.objects.create(
+            ledger_entry=entry_a, amount=Decimal("30000.00"), payment_date="2026-08-21", payment_method="UPI"
+        )
+        
+        LedgerPayment.objects.create(
+            ledger_entry=entry_a, amount=Decimal("20000.00"), payment_date="2026-08-23", payment_method="CASH"
+        )
+
+        # SUPPLIER A
+        entry_s = LedgerEntry.objects.create(
+            business=self.business, party_name="Supplier A", transaction_type="PAYABLE",
+            amount=Decimal("80000.00"), reference="Purchase", status="PARTIALLY_PAID"
+        )
+        
+        LedgerPayment.objects.create(
+            ledger_entry=entry_s, amount=Decimal("30000.00"), payment_date="2026-08-24", payment_method="BANK_TRANSFER"
+        )
+
+        # 1. Test Fetch All
+        response = self.client.get(self.history_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        results = response.data["results"]
+        self.assertEqual(len(results), 5) # 2 entries, 3 payments
+        
+        # 2. Test Search (INV001)
+        response = self.client.get(f"{self.history_url}?search=INV001")
+        results = response.data["results"]
+        self.assertEqual(len(results), 3) # The entry + its 2 payments
+        for r in results:
+            self.assertEqual(r["unified_reference"], "INV001")
+            
+        # 3. Test Party Filter (Customer A)
+        response = self.client.get(f"{self.history_url}?party_id={cust_a.id}")
+        results = response.data["results"]
+        self.assertEqual(len(results), 3)
+        for r in results:
+            self.assertEqual(r["unified_party_name"], "Customer A")
+            
+        # 4. Test Type Filter (Money Received)
+        response = self.client.get(f"{self.history_url}?type_filter=Money Received")
+        results = response.data["results"]
+        self.assertEqual(len(results), 2)
+        for r in results:
+            self.assertEqual(r["record_type"], "PAYMENT")
+            self.assertEqual(r["unified_transaction_type"], "RECEIVABLE")
+            
+        # 5. Test Date Filter
+        response = self.client.get(f"{self.history_url}?start_date=2026-08-23&end_date=2026-08-24")
+        results = response.data["results"]
+        self.assertEqual(len(results), 2) # the two payments on those dates

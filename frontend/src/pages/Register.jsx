@@ -80,7 +80,7 @@ export default function Register() {
           
           <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
             <FormField 
-              label="Name *" 
+              label="Name" 
               id="full_name" 
               name="full_name" 
               value={formData.full_name} 
@@ -89,7 +89,7 @@ export default function Register() {
             />
             
             <FormField 
-              label="Email *" 
+              label="Email" 
               id="email" 
               type="email" 
               name="email" 
@@ -99,7 +99,7 @@ export default function Register() {
             />
             
             <FormField 
-              label="Password *" 
+              label="Password" 
               id="password" 
               type={showPassword ? "text" : "password"} 
               name="password" 
@@ -132,7 +132,7 @@ export default function Register() {
             />
             
             <FormField 
-              label="Confirm Password *" 
+              label="Confirm Password" 
               id="password_confirm" 
               type={showConfirmPassword ? "text" : "password"} 
               name="password_confirm" 

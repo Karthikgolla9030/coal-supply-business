@@ -118,11 +118,12 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
                   <input
                     className={`form-input${getItemError(idx, 'quantity') ? ' error' : ''}`}
                     type="number"
-                    placeholder="0.00"
+                    placeholder="Enter qty"
                     step="0.001"
                     min="0.001"
                     value={item.quantity}
                     onChange={(e) => onChange(idx, 'quantity', e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                     id={`item_${idx}_qty`}
                   />
                   {getItemError(idx, 'quantity') && (
@@ -133,7 +134,7 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
                 {/* Unit */}
                 <td style={{ padding: 'var(--space-2)', minWidth: '80px' }}>
                   <select
-                    className="form-input"
+                    className="form-control"
                     value={item.unit}
                     onChange={(e) => onChange(idx, 'unit', e.target.value)}
                     id={`item_${idx}_unit`}
@@ -150,11 +151,12 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
                   <input
                     className={`form-input${getItemError(idx, 'rate') ? ' error' : ''}`}
                     type="number"
-                    placeholder="0.00"
+                    placeholder="Enter rate"
                     step="0.01"
                     min="0"
                     value={item.rate}
                     onChange={(e) => onChange(idx, 'rate', e.target.value)}
+                    onWheel={(e) => e.target.blur()}
                     id={`item_${idx}_rate`}
                   />
                   {getItemError(idx, 'rate') && (

@@ -20,7 +20,8 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username || !password) {
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) {
       setError('Please enter both email and password.');
       return;
     }
@@ -28,7 +29,7 @@ export default function Login() {
     try {
       setIsSubmitting(true);
       setError('');
-      await login(username, password);
+      await login(cleanUsername, password);
       
       // Clear location state (like the success message) to prevent it from persisting on refresh if we navigated back to login later
       navigate(from, { replace: true, state: {} });
@@ -70,7 +71,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <FormField
-            label="Email *"
+            label="Email"
             id="username"
             type="email"
             value={username}
@@ -80,7 +81,7 @@ export default function Login() {
           />
           
           <FormField
-            label="Password *"
+            label="Password"
             id="password"
             type={showPassword ? "text" : "password"}
             value={password}
@@ -110,6 +111,20 @@ export default function Login() {
               </button>
             }
           />
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.25rem' }}>
+            <Link 
+              to="/forgot-password" 
+              style={{ 
+                color: 'var(--color-primary)', 
+                fontSize: 'var(--font-size-sm)', 
+                textDecoration: 'none',
+                fontWeight: '500' 
+              }}
+            >
+              Forgot Password?
+            </Link>
+          </div>
 
           <button 
             type="submit" 

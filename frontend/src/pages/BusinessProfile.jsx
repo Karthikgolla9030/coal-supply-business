@@ -157,7 +157,7 @@ export default function BusinessProfilePage() {
 
   return (
     <div className="page-content">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
           <h1 className="page-title">Business Profile</h1>
           <p className="page-subtitle">
@@ -246,7 +246,7 @@ export default function BusinessProfilePage() {
             <div className="card-title">Business Information</div>
             <div className="form-grid">
               <FormField
-                label="Business Name *"
+                label="Business Name"
                 name="business_name"
                 id="business_name"
                 required

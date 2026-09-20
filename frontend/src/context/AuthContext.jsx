@@ -27,7 +27,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (username, password) => {
-    const response = await client.post('/auth/login/', { username, password });
+    const cleanUsername = typeof username === 'string' ? username.trim() : username;
+    const response = await client.post('/auth/login/', { username: cleanUsername, password });
     const { access, refresh } = response.data;
     
     // Store tokens

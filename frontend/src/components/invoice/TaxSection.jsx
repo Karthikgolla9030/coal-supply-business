@@ -56,9 +56,10 @@ export default function TaxSection({ taxableAmount, data, errors, onChange }) {
                   step="0.01"
                   min="0"
                   max="100"
-                  placeholder="0.00"
+                  placeholder="Rate"
                   value={data[rateKey]}
                   onChange={(e) => onChange(rateKey, e.target.value)}
+                  onWheel={(e) => e.target.blur()}
                   id={rateKey}
                 />
                 <span style={{

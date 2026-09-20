@@ -8,7 +8,13 @@ from django.urls import include, path
 
 from config.views import HealthCheckView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from core.views import CurrentUserView, RegisterView
+from core.views import (
+    CurrentUserView, 
+    RegisterView,
+    PasswordResetRequestView,
+    PasswordResetValidateTokenView,
+    PasswordResetConfirmView,
+)
 
 urlpatterns = [
     # Health check — public, no auth required
@@ -19,6 +25,9 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/me/", CurrentUserView.as_view(), name="current_user"),
     path("auth/register/", RegisterView.as_view(), name="register"),
+    path("auth/forgot-password/", PasswordResetRequestView.as_view(), name="password_reset_request"),
+    path("auth/reset-password/validate/", PasswordResetValidateTokenView.as_view(), name="password_reset_validate"),
+    path("auth/reset-password/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 
     # Core business endpoints (business profile, customers)
     path("", include("core.urls")),

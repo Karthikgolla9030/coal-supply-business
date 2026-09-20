@@ -26,7 +26,7 @@ Design notes:
 
 from decimal import Decimal
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Q
@@ -35,8 +35,13 @@ from django.conf import settings
 
 
 # ─────────────────────────────────────────────────────────────
-# Constants / choices
+# Constants / choices / validators
 # ─────────────────────────────────────────────────────────────
+
+def validate_file_size(value):
+    limit = 5 * 1024 * 1024  # 5 MB
+    if value.size > limit:
+        raise ValidationError('File size cannot exceed 5MB.')
 
 class TransactionType(models.TextChoices):
     CASH = "CASH", "Cash"
@@ -136,8 +141,14 @@ class BusinessProfile(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────
-# Customer
+# Customer / Party
 # ─────────────────────────────────────────────────────────────
+
+class PartyType(models.TextChoices):
+    CUSTOMER = "CUSTOMER", "Customer"
+    SUPPLIER = "SUPPLIER", "Supplier"
+    TRANSPORTER = "TRANSPORTER", "Transporter"
+    OTHER = "OTHER", "Other"
 
 class Customer(models.Model):
     """
@@ -157,6 +168,13 @@ class Customer(models.Model):
         related_name="customers",
         help_text="The business that owns this customer record.",
         null=True,  # Temporarily allow null for migration
+    )
+    party_type = models.CharField(
+        max_length=20,
+        choices=PartyType.choices,
+        default=PartyType.CUSTOMER,
+        db_index=True,
+        help_text="The role of this party (Customer, Supplier, Transporter, Other)"
     )
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True, default="")
@@ -217,8 +235,323 @@ class Customer(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────
-# Invoice
+# Supplier
 # ─────────────────────────────────────────────────────────────
+
+class Supplier(models.Model):
+    """
+    A supplier record for purchasing coal.
+    Isolated per business. Future-proofed for Phase 2 (Purchases).
+    """
+    business = models.ForeignKey(
+        BusinessProfile,
+        on_delete=models.CASCADE,
+        related_name="suppliers",
+        help_text="The business that owns this supplier record.",
+    )
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=20, blank=True, default="")
+    gstin = models.CharField(
+        max_length=15,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="GST Identification Number — optional",
+    )
+    aadhaar_no = models.CharField(
+        max_length=12,
+        blank=True,
+        default="",
+        help_text="Aadhaar Number — optional",
+    )
+    address = models.TextField(blank=True, default="")
+    state = models.CharField(max_length=100, blank=True, default="")
+    pincode = models.CharField(max_length=10, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
+    
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive suppliers are archived/hidden from selection.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Supplier"
+        verbose_name_plural = "Suppliers"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["name"], name="supplier_name_idx"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+# ─────────────────────────────────────────────────────────────
+# Purchase
+# ─────────────────────────────────────────────────────────────
+
+class Purchase(models.Model):
+    """
+    A coal purchase record from a supplier.
+    Isolated per business.
+    """
+    business = models.ForeignKey(
+        BusinessProfile,
+        on_delete=models.CASCADE,
+        related_name="purchases",
+        help_text="The business that owns this purchase record.",
+    )
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.PROTECT,
+        related_name="purchases",
+        help_text="The supplier of the coal.",
+    )
+    purchase_date = models.DateField(db_index=True)
+    purchase_order_no = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    serial_no = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    truck_no = models.CharField(max_length=50, blank=True, default="", db_index=True)
+    
+    quantity_tons = models.DecimalField(
+        max_digits=12, decimal_places=3, 
+        validators=[MinValueValidator(Decimal('0.001'))]
+    )
+    rate_per_ton = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    purchase_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    gst_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    gst_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    
+    notes = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive purchases are archived/soft-deleted.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Purchase"
+        verbose_name_plural = "Purchases"
+        ordering = ["-purchase_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity_tons__gt=0),
+                name='purchase_quantity_positive'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rate_per_ton__gte=0),
+                name='purchase_rate_non_negative'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(gst_rate__gte=0),
+                name='purchase_gst_rate_non_negative'
+            )
+        ]
+
+    def __str__(self):
+        return f"Purchase {self.id} on {self.purchase_date} from {self.supplier.name}"
+
+    def save(self, *args, **kwargs):
+        # Enforce server-side calculation of amounts
+        self.purchase_amount = (self.quantity_tons * self.rate_per_ton).quantize(Decimal('0.01'))
+        self.gst_amount = (self.purchase_amount * (self.gst_rate / Decimal('100.0'))).quantize(Decimal('0.01'))
+        self.total_amount = self.purchase_amount + self.gst_amount
+        super().save(*args, **kwargs)
+
+
+# ─────────────────────────────────────────────────────────────
+# Sale
+# ─────────────────────────────────────────────────────────────
+
+class Sale(models.Model):
+    """
+    A coal sale record to a customer.
+    Isolated per business.
+    """
+    business = models.ForeignKey(
+        BusinessProfile,
+        on_delete=models.CASCADE,
+        related_name="sales",
+        help_text="The business that owns this sale record.",
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
+        related_name="sales",
+        help_text="The customer who purchased the coal.",
+    )
+    sale_date = models.DateField(db_index=True)
+    sale_order_no = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    serial_no = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    truck_no = models.CharField(max_length=50, blank=True, default="", db_index=True)
+    
+    payment_type = models.CharField(max_length=20, blank=True, null=True, default='')
+    
+    quantity_tons = models.DecimalField(
+        max_digits=12, decimal_places=3, 
+        validators=[MinValueValidator(Decimal('0.001'))]
+    )
+    rate_per_ton = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    sale_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    gst_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    gst_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    tcs_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    tcs_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    total_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    
+    notes = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive sales are archived/soft-deleted.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Sale"
+        verbose_name_plural = "Sales"
+        ordering = ["-sale_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity_tons__gt=0),
+                name='sale_quantity_positive'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rate_per_ton__gte=0),
+                name='sale_rate_non_negative'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(gst_rate__gte=0),
+                name='sale_gst_rate_non_negative'
+            )
+        ]
+
+    def __str__(self):
+        return f"Sale {self.id} on {self.sale_date} to {self.customer.name}"
+
+
+
+    def save(self, *args, **kwargs):
+        # Enforce server-side calculation of amounts
+        self.sale_amount = (self.quantity_tons * self.rate_per_ton).quantize(Decimal('0.01'))
+        self.gst_amount = (self.sale_amount * (self.gst_rate / Decimal('100.0'))).quantize(Decimal('0.01'))
+        if not hasattr(self, 'tcs_rate') or self.tcs_rate is None:
+            self.tcs_rate = Decimal('0.00')
+        self.tcs_amount = (self.sale_amount * (self.tcs_rate / Decimal('100.0'))).quantize(Decimal('0.01'))
+        self.total_amount = self.sale_amount + self.gst_amount + self.tcs_amount
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError("Destructive deletion is disabled to preserve financial history. Please use the Archive/Void action instead.")
+
+
+# ─────────────────────────────────────────────────────────────
+# Expense
+# ─────────────────────────────────────────────────────────────
+
+class ExpenseCategory(models.TextChoices):
+    TRANSPORT = 'TRANSPORT', 'Transport'
+    LOADING = 'LOADING', 'Loading'
+    UNLOADING = 'UNLOADING', 'Unloading'
+    LABOUR = 'LABOUR', 'Labour'
+    COMMISSION = 'COMMISSION', 'Commission'
+    WAREHOUSE = 'WAREHOUSE', 'Warehouse'
+    ELECTRICITY = 'ELECTRICITY', 'Electricity'
+    MAINTENANCE = 'MAINTENANCE', 'Maintenance'
+    REPAIRS = 'REPAIRS', 'Repairs'
+    OFFICE = 'OFFICE', 'Office'
+    FUEL = 'FUEL', 'Fuel'
+    OTHER = 'OTHER', 'Other'
+
+
+class Expense(models.Model):
+    """
+    A standalone expense record representing operational business costs.
+    It can optionally reference Customers, Suppliers, Purchases, or Sales.
+    """
+    business = models.ForeignKey(
+        BusinessProfile,
+        on_delete=models.CASCADE,
+        related_name="expenses",
+    )
+    expense_date = models.DateField()
+    category = models.CharField(
+        max_length=20,
+        choices=ExpenseCategory.choices,
+        default=ExpenseCategory.OTHER
+    )
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    paid_to = models.CharField(max_length=255, blank=True, default="")
+    reference_no = models.CharField(max_length=100, blank=True, default="")
+    
+    # Optional Relationships
+    supplier = models.ForeignKey(Supplier, null=True, blank=True, on_delete=models.SET_NULL, related_name="expenses")
+    customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL, related_name="expenses")
+    purchase = models.ForeignKey(Purchase, null=True, blank=True, on_delete=models.SET_NULL, related_name="expenses")
+    sale = models.ForeignKey(Sale, null=True, blank=True, on_delete=models.SET_NULL, related_name="expenses")
+    
+    notes = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Expense"
+        verbose_name_plural = "Expenses"
+        ordering = ["-expense_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='expense_amount_positive'
+            )
+        ]
+
+    def __str__(self):
+        return f"Expense {self.id} - {self.category} on {self.expense_date}"
+
+    def clean(self):
+        super().clean()
+        from django.core.exceptions import ValidationError
+        # Enforce business isolation on FKs
+        if self.supplier and self.supplier.business != self.business:
+            raise ValidationError("Supplier does not belong to this business.")
+        if self.customer and self.customer.business != self.business:
+            raise ValidationError("Customer does not belong to this business.")
+        if self.purchase and self.purchase.business != self.business:
+            raise ValidationError("Purchase does not belong to this business.")
+        if self.sale and self.sale.business != self.business:
+            raise ValidationError("Sale does not belong to this business.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
 
 class Invoice(models.Model):
     """
@@ -533,6 +866,7 @@ class LedgerEntry(models.Model):
         ('PENDING', 'Pending'),
         ('PARTIALLY_PAID', 'Partially Paid'),
         ('PAID', 'Paid'),
+        ('VOIDED', 'Voided'),
     ]
 
     business = models.ForeignKey(
@@ -566,6 +900,15 @@ class LedgerEntry(models.Model):
         help_text="The invoice that generated this ledger entry (if applicable)."
     )
     
+    sale = models.OneToOneField(
+        'Sale',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="receivable",
+        help_text="The sale this receivable is linked to."
+    )
+    
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(
         max_digits=12, 
@@ -573,7 +916,20 @@ class LedgerEntry(models.Model):
         validators=[MinValueValidator(Decimal("0.01"))],
         help_text="Original transaction amount"
     )
+    tcs_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    tcs_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
     
+    # Optional fields specifically for 'To Receive' entries
+    sale_order_no = models.CharField(max_length=100, blank=True, default="")
+    purchase_order_no = models.CharField(max_length=100, blank=True, default="")
+    serial_no = models.CharField(max_length=100, blank=True, default="")
+    truck_no = models.CharField(max_length=50, blank=True, default="")
+    entry_date = models.DateField(null=True, blank=True, help_text="Date associated with this entry, separate from creation time")
+    tons = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+
     reference = models.CharField(max_length=255, blank=True, help_text="Invoice number, PO number, or reason")
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
@@ -597,19 +953,22 @@ class LedgerEntry(models.Model):
         return f"{self.transaction_type} | {party} | ₹{self.amount}"
 
     def get_paid_amount(self):
-        return self.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+        return self.payments.exclude(status='VOIDED').aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
 
     def get_remaining_amount(self):
         return self.amount - self.get_paid_amount()
 
     def update_status(self):
-        paid = self.get_paid_amount()
-        if paid >= self.amount:
-            self.status = 'PAID'
-        elif paid > 0:
-            self.status = 'PARTIALLY_PAID'
+        if self.sale and not self.sale.is_active:
+            self.status = 'VOIDED'
         else:
-            self.status = 'PENDING'
+            paid = self.get_paid_amount()
+            if paid >= self.amount:
+                self.status = 'PAID'
+            elif paid > 0:
+                self.status = 'PARTIALLY_PAID'
+            else:
+                self.status = 'PENDING'
         self.save(update_fields=['status', 'updated_at'])
 
 
@@ -623,6 +982,11 @@ class LedgerPayment(models.Model):
         ('BANK_TRANSFER', 'Bank Transfer'),
         ('CHEQUE', 'Cheque'),
         ('OTHER', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('RECORDED', 'Recorded'),
+        ('VOIDED', 'Voided'),
     ]
 
     ledger_entry = models.ForeignKey(
@@ -639,6 +1003,17 @@ class LedgerPayment(models.Model):
     payment_date = models.DateField()
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, blank=True)
     notes = models.TextField(blank=True)
+    proof_document = models.FileField(
+        upload_to='payment_proofs/', 
+        null=True, 
+        blank=True, 
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'pdf']),
+            validate_file_size
+        ],
+        help_text="Optional supporting documentation for the payment."
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='RECORDED')
     
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -658,7 +1033,7 @@ class LedgerPayment(models.Model):
                 if current_paid + self.amount > self.ledger_entry.amount:
                     raise ValidationError("Payment amount exceeds the remaining ledger balance.")
             else:
-                other_paid = self.ledger_entry.payments.exclude(pk=self.pk).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+                other_paid = self.ledger_entry.payments.exclude(pk=self.pk).exclude(status='VOIDED').aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
                 if other_paid + self.amount > self.ledger_entry.amount:
                     raise ValidationError("Updated payment amount exceeds the remaining ledger balance.")
 
@@ -668,6 +1043,40 @@ class LedgerPayment(models.Model):
         self.ledger_entry.update_status()
 
     def delete(self, *args, **kwargs):
-        entry = self.ledger_entry
-        super().delete(*args, **kwargs)
-        entry.update_status()
+        raise ValidationError("Destructive deletion of payments is not allowed. Please void the payment instead.")
+
+# ─────────────────────────────────────────────────────────────
+# Audit Log (Phase 8)
+# ─────────────────────────────────────────────────────────────
+
+class AuditLog(models.Model):
+    """
+    Stores an immutable history of financial actions (creation, editing, voiding).
+    """
+    business = models.ForeignKey(
+        BusinessProfile, 
+        on_delete=models.CASCADE, 
+        related_name="audit_logs",
+        help_text="The business this action belongs to."
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="User who performed the action"
+    )
+    action = models.CharField(max_length=255, help_text="e.g. 'Payment recorded', 'Ledger entry voided'")
+    record_type = models.CharField(max_length=50, help_text="e.g. 'LedgerEntry', 'LedgerPayment'")
+    record_id = models.PositiveIntegerField(help_text="The ID of the affected record")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(blank=True, null=True, help_text="Store previous and new state diffs if applicable")
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['business', 'record_type', 'record_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.action} on {self.record_type} #{self.record_id}"

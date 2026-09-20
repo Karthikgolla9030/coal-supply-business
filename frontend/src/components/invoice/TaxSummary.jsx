@@ -76,8 +76,10 @@ export default function TaxSummary({ business, customer, taxableAmount, data, er
               type="number"
               id="gst_rate"
               name="gst_rate"
+              placeholder="Rate"
               value={data.gst_rate}
               onChange={onChange}
+              onWheel={(e) => e.target.blur()}
               className={`form-input ${errors.gst_rate ? 'error' : ''}`}
               style={{ fontSize: '1.25rem', fontWeight: 'bold' }}
               min="0"
@@ -96,8 +98,10 @@ export default function TaxSummary({ business, customer, taxableAmount, data, er
               type="number"
               id="tcs_rate"
               name="tcs_rate"
+              placeholder="Rate"
               value={data.tcs_rate}
               onChange={onChange}
+              onWheel={(e) => e.target.blur()}
               className={`form-input ${errors.tcs_rate ? 'error' : ''}`}
               style={{ fontSize: '1.25rem', fontWeight: 'bold' }}
               min="0"

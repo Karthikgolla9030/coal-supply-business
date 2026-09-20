@@ -19,8 +19,8 @@ function freshForm() {
     transaction_type: 'CASH',
     transport_name:   '',
     vehicle_number:   '',
-    gst_rate:         '18.00',
-    tcs_rate:         '0.00',
+    gst_rate:         '',
+    tcs_rate:         '',
     reverse_charge:   false,
   };
 }
@@ -118,6 +118,11 @@ export default function InvoiceNew() {
 
     if (selectedCustomer && !selectedCustomer.state) {
       errs.customer = 'The selected customer is missing a State. This is required for tax calculation.';
+      valid = false;
+    }
+
+    if (selectedCustomer && !selectedCustomer.gstin && !selectedCustomer.aadhaar_no) {
+      errs.customer = 'GSTIN/Aadhaar is required for this invoice. Please click "Edit" on the customer to update their details before continuing.';
       valid = false;
     }
 

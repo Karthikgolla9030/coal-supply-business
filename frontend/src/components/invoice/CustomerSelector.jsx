@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import FormField from '../FormField';
-import { getCustomers, createCustomer } from '../../api/customers';
+import { getCustomers, createCustomer, updateCustomer } from '../../api/customers';
 import { INDIAN_STATES, getStateCode } from '../../utils/states';
 import { Plus, X, Search } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -14,10 +14,11 @@ function useDebounce(value, delay = 350) {
   return debounced;
 }
 
-/* ── Add New Customer Modal ─────────────────────────────────── */
-function AddCustomerModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({
-    name: '', address: '', gst_registered: false, gstin: '', aadhaar_no: '', state: '', state_code: '', phone: '', email: '',
+/* ── Add New Party Modal ─────────────────────────────────── */
+function AddPartyModal({ onClose, onCreated, initialPartyType = 'CUSTOMER', initialData = null }) {
+  const isEditMode = !!initialData;
+  const [form, setForm] = useState(initialData ? { ...initialData } : {
+    name: '', party_type: initialPartyType, address: '', gst_registered: false, gstin: '', aadhaar_no: '', state: '', state_code: '', phone: '', email: '',
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -45,8 +46,13 @@ function AddCustomerModal({ onClose, onCreated }) {
     setAlert(null);
     setSaving(true);
     try {
-      const res = await createCustomer(form);
-      onCreated(res.data);
+      if (isEditMode) {
+        const res = await updateCustomer(initialData.id, form);
+        onCreated(res.data);
+      } else {
+        const res = await createCustomer(form);
+        onCreated(res.data);
+      }
     } catch (err) {
       const data = err.response?.data;
       if (err.response?.status === 400 && data) {
@@ -66,8 +72,8 @@ function AddCustomerModal({ onClose, onCreated }) {
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <span className="modal-title">Add New Customer</span>
-          <button className="modal-close" onClick={onClose}><X size={20} /></button>
+          <span className="modal-title">{isEditMode ? 'Edit Customer' : 'Add Customer'}</span>
+          <button className="modal-close" type="button" onClick={onClose}><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} noValidate>
           <div className="modal-body">
@@ -75,9 +81,10 @@ function AddCustomerModal({ onClose, onCreated }) {
             <div className="form-grid">
               <FormField label="Customer Name" name="name" id="new_cust_name" required
                 value={form.name} onChange={handleChange} error={errors.name} placeholder="e.g. ABC Traders" />
-              
+
+
               <div className="form-field span-2">
-                <label>GST Registration *</label>
+                <label>GST Registration <span className="required">*</span></label>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'normal' }}>
                     <input type="radio" name="gst_registered" value="true" checked={form.gst_registered === true} onChange={handleChange} />
@@ -91,7 +98,7 @@ function AddCustomerModal({ onClose, onCreated }) {
               </div>
 
               {form.gst_registered ? (
-                <FormField label="GSTIN *" name="gstin" id="new_cust_gstin" required
+                <FormField label="GSTIN" name="gstin" id="new_cust_gstin" required
                   value={form.gstin} onChange={handleChange} error={errors.gstin}
                   placeholder="e.g. 29ABCDE1234F1Z5" maxLength={15} />
               ) : (
@@ -133,7 +140,7 @@ function AddCustomerModal({ onClose, onCreated }) {
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving} id="modal-save-customer-btn">
-              {saving ? <><span className="spinner" /> Saving…</> : '+ Save Customer'}
+              {saving ? <><span className="spinner" /> Saving…</> : (isEditMode ? 'Update Customer' : 'Save Customer')}
             </button>
           </div>
         </form>
@@ -144,7 +151,7 @@ function AddCustomerModal({ onClose, onCreated }) {
 }
 
 /* ── Customer detail display ────────────────────────────────── */
-function CustomerDisplay({ customer, onClear }) {
+function CustomerDisplay({ customer, onClear, onEdit }) {
   const fields = [
     ['GST Status', customer.gst_registered ? 'GST Registered' : 'Unregistered'],
     customer.gst_registered 
@@ -168,9 +175,16 @@ function CustomerDisplay({ customer, onClear }) {
         <span style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>
           {customer.name}
         </span>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={onClear}>
-          Change
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {onEdit && (
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onEdit}>
+              Edit
+            </button>
+          )}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onClear}>
+            Change
+          </button>
+        </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
         {fields.map(([label, value]) => value ? (
@@ -192,34 +206,48 @@ function CustomerDisplay({ customer, onClear }) {
  *   selected   customer object | null
  *   onSelect   (customer) => void
  *   error      string | null
+ *   partyType  string | array | null
+ *   label      string (optional, overrides default)
+ *   helperText string (optional)
  */
-export default function CustomerSelector({ selected, onSelect, error }) {
+export default function CustomerSelector({ selected, onSelect, error, partyType, label, helperText }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const debouncedQuery = useDebounce(query, 350);
   const wrapperRef = useRef(null);
 
-  // Search when debounced query changes
-  useEffect(() => {
-    if (!debouncedQuery || debouncedQuery.length < 1) {
+  const fetchResults = useCallback(() => {
+    if (!debouncedQuery.trim()) {
       setResults([]);
-      setOpen(false);
       return;
     }
     setSearching(true);
-    getCustomers({ search: debouncedQuery, page: 1 })
+    let params = { search: debouncedQuery, is_active: 'true' };
+    if (partyType) {
+      if (Array.isArray(partyType)) {
+        params.party_type_in = partyType.join(',');
+      } else {
+        params.party_type = partyType;
+      }
+    }
+    getCustomers(params)
       .then((res) => {
         setResults(res.data.results || res.data || []);
         setOpen(true);
       })
       .catch(() => setResults([]))
       .finally(() => setSearching(false));
-  }, [debouncedQuery]);
+  }, [debouncedQuery, partyType]);
 
-  // Close dropdown on outside click
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
   useEffect(() => {
     const handler = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -242,17 +270,19 @@ export default function CustomerSelector({ selected, onSelect, error }) {
     setQuery('');
   };
 
-  const handleCreated = (newCustomer) => {
-    setShowModal(false);
-    handleSelect(newCustomer);
-  };
-
   return (
-    <div className="card">
-      <div className="card-title">Customer / Receiver</div>
+    <div style={{ position: 'relative' }}>
+      <label className="form-label" style={{ display: 'block', marginBottom: helperText ? '0.25rem' : '0.5rem' }}>
+        {label || 'Customer / Receiver'}
+      </label>
+      {helperText && (
+        <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
+          {helperText}
+        </div>
+      )}
 
       {selected ? (
-        <CustomerDisplay customer={selected} onClear={handleClear} />
+        <CustomerDisplay customer={selected} onClear={handleClear} onEdit={() => setEditModalOpen(true)} />
       ) : (
         <div ref={wrapperRef} style={{ position: 'relative' }}>
           <div className="search-bar" style={{ position: 'relative' }}>
@@ -260,7 +290,7 @@ export default function CustomerSelector({ selected, onSelect, error }) {
             <input
               id="customer-search-input"
               type="text"
-              className={`form-input${error ? ' error' : ''}`}
+              className={`form-control${error ? ' error' : ''}`}
               style={{ paddingLeft: '2.5rem' }}
               placeholder="Search customer by name, GSTIN, or phone…"
               value={query}
@@ -270,92 +300,73 @@ export default function CustomerSelector({ selected, onSelect, error }) {
             />
           </div>
 
-          {/* Dropdown */}
           {open && (
-            <div style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              left: 0,
-              right: 0,
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-md)',
-              zIndex: 150,
-              maxHeight: '260px',
-              overflowY: 'auto',
+            <ul style={{
+              position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+              background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)',
+              zIndex: 150, maxHeight: '260px', overflowY: 'auto', listStyle: 'none', margin: 0, padding: 0,
             }}>
-              {searching && (
-                <div style={{ padding: 'var(--space-4)', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                  <span className="spinner" style={{ display: 'inline-block', marginRight: 'var(--space-2)' }} />
-                  Searching…
-                </div>
-              )}
-              {!searching && results.length === 0 && (
-                <div style={{ padding: 'var(--space-4)', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
-                  No customers found for "{query}"
-                </div>
-              )}
-              {!searching && results.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => handleSelect(c)}
+              {searching && <li style={{ padding: 'var(--space-4)', textAlign: 'center' }}>Searching…</li>}
+              {!searching && results.length === 0 && <li style={{ padding: 'var(--space-4)', textAlign: 'center' }}>No results</li>}
+              {results.map((r) => (
+                <li
+                  key={r.id}
                   style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    background: 'none',
-                    border: 'none',
                     padding: 'var(--space-3) var(--space-4)',
                     cursor: 'pointer',
                     borderBottom: '1px solid var(--color-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    transition: 'background var(--transition)',
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                  onClick={() => handleSelect(r)}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-subtle)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500, color: 'var(--color-text)' }}>
-                    {c.name}
-                  </span>
-                  {c.gstin && (
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
-                      {c.gstin}
+                  <div style={{ fontWeight: 500, color: 'var(--color-text)' }}>{r.name}</div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'flex', gap: '1rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
+                      {r.party_type ? r.party_type.charAt(0) + r.party_type.slice(1).toLowerCase() : 'Customer'}
                     </span>
-                  )}
-                  {c.phone && (
-                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)' }}>
-                      {c.phone}
-                    </span>
-                  )}
-                </button>
+                    <span>{r.gst_registered ? `GSTIN: ${r.gstin}` : `Aadhaar: ${r.aadhaar_no || 'N/A'}`}</span>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
           {error && <p className="form-error" style={{ marginTop: 'var(--space-2)' }}>{error}</p>}
 
-          {/* Add new customer link */}
-          <div style={{ marginTop: 'var(--space-3)' }}>
+          <div style={{ marginTop: '0.75rem' }}>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
-              id="add-new-customer-from-invoice"
-              onClick={() => setShowModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              onClick={() => setAddModalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
             >
-              <Plus size={14} /> Add New Customer
+              <Plus size={16} /> {label === 'PARTY' ? 'Add New Party' : 'Add New Customer'}
             </button>
           </div>
         </div>
       )}
 
-      {showModal && (
-        <AddCustomerModal
-          onClose={() => setShowModal(false)}
-          onCreated={handleCreated}
+      {addModalOpen && (
+        <AddPartyModal
+          initialPartyType={Array.isArray(partyType) ? partyType[0] : (partyType || 'CUSTOMER')}
+          onClose={() => setAddModalOpen(false)}
+          onCreated={(newCust) => {
+            setAddModalOpen(false);
+            handleSelect(newCust);
+          }}
+        />
+      )}
+
+      {editModalOpen && selected && (
+        <AddPartyModal
+          initialData={selected}
+          onClose={() => setEditModalOpen(false)}
+          onCreated={(updatedCust) => {
+            setEditModalOpen(false);
+            onSelect(updatedCust); // Update the parent's selected state
+          }}
         />
       )}
     </div>

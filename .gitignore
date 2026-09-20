@@ -53,3 +53,14 @@ Thumbs.db
 .DS_Store
 
 backend/credentials/
+
+# Media uploads
+media/
+backend/media/
+
+# Test scripts & artifacts
+test_*.py
+test_*.pdf
+patch_models.py
+*.pdf
+radio_*.png

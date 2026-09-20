@@ -110,6 +110,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "core.auth_backend.EmailOrUsernameModelBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # ─────────────────────────────────────────────
 # Internationalisation
 # ─────────────────────────────────────────────
@@ -127,6 +132,10 @@ USE_TZ = True
 # ─────────────────────────────────────────────
 
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ─────────────────────────────────────────────
 # Default primary key type
@@ -158,6 +167,17 @@ REST_FRAMEWORK = {
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
     ],
+    # Throttling
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/minute",
+        "user": "1000/minute",
+        "password_reset": "5/minute",
+    },
 }
 
 from datetime import timedelta
@@ -179,7 +199,7 @@ SIMPLE_JWT = {
 # Add production origin to CORS_ALLOWED_ORIGINS via environment variable.
 # ─────────────────────────────────────────────
 
-_cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+_cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
 # Allow credentials (cookies/session) to be sent cross-origin
@@ -205,3 +225,25 @@ GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", str(_defa
 # ─────────────────────────────────────────────
 
 GSTIN_API_KEY = os.getenv("GSTIN_API_KEY")
+
+# ─────────────────────────────────────────────
+# Email Configuration
+# ─────────────────────────────────────────────
+
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend"
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").strip().lower() in ("1", "true", "yes")
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").strip().lower() in ("1", "true", "yes")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "").replace(" ", "").strip()
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Coal Invoice <noreply@example.com>")
+
+# Frontend base URL for password reset links and external redirects
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+# Password reset token expiry in seconds (default 3600 = 1 hour)
+PASSWORD_RESET_TIMEOUT = int(os.getenv("PASSWORD_RESET_TIMEOUT", 3600))

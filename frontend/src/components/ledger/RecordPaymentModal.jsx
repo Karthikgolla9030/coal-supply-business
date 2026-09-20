@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, AlertCircle, UploadCloud, File as FileIcon, FileImage, Trash2 } from 'lucide-react';
 import { ledgerApi } from '../../api/ledger';
 
 export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuccess }) {
@@ -7,9 +7,12 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [notes, setNotes] = useState('');
+  const [proofFile, setProofFile] = useState(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  
+  const fileInputRef = useRef(null);
 
   if (!isOpen || !ledgerEntry) return null;
 
@@ -23,12 +26,42 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
     setPaymentDate(new Date().toISOString().split('T')[0]);
     setPaymentMethod('CASH');
     setNotes('');
+    setProofFile(null);
     setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setError(null);
+    
+    if (file) {
+      // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File is too large. Please upload a file smaller than 5MB.');
+        e.target.value = '';
+        return;
+      }
+      
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Unsupported file type. Please upload a JPG, PNG, WEBP, or PDF file.');
+        e.target.value = '';
+        return;
+      }
+      
+      setProofFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setProofFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -50,14 +83,24 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
 
     try {
       setIsSubmitting(true);
-      
-      const payload = {
-        ledger_entry: ledgerEntry.id,
-        amount: paymentAmt.toFixed(2),
-        payment_date: paymentDate,
-        payment_method: paymentMethod,
-        notes: notes,
-      };
+      let payload;
+      if (proofFile) {
+        payload = new FormData();
+        payload.append('ledger_entry', ledgerEntry.id);
+        payload.append('amount', paymentAmt.toFixed(2));
+        payload.append('payment_date', paymentDate);
+        payload.append('payment_method', paymentMethod);
+        payload.append('notes', notes);
+        payload.append('proof_document', proofFile);
+      } else {
+        payload = {
+          ledger_entry: ledgerEntry.id,
+          amount: paymentAmt.toFixed(2),
+          payment_date: paymentDate,
+          payment_method: paymentMethod,
+          notes: notes,
+        };
+      }
 
       await ledgerApi.createLedgerPayment(payload);
       handleClose();
@@ -71,7 +114,7 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
 
   return (
     <div className="modal-backdrop">
-      <div className="modal" style={{ maxWidth: '400px', width: '100%' }}>
+      <div className="modal" style={{ maxWidth: 'min(400px, calc(100vw - 32px))', width: '100%' }}>
         <div className="modal-header">
           <h2 className="modal-title">Record Payment</h2>
           <button className="btn-icon" onClick={handleClose}>
@@ -80,9 +123,9 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
         </div>
 
         <div className="modal-body">
-          <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '0.375rem', border: '1px solid var(--color-border)' }}>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Remaining Balance</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--color-text)' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+          <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--color-surface-2)', borderRadius: '0.375rem', border: '1px solid var(--color-border)' }}>
+            <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Remaining Balance</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-text)', marginTop: '0.25rem' }}>₹{remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
           </div>
 
           {error && (
@@ -102,9 +145,10 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
                 min="0.01"
                 max={remaining}
                 className="form-control" 
-                placeholder="0.00" 
+                placeholder="Enter payment amount" 
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onWheel={(e) => e.target.blur()}
                 required
               />
             </div>
@@ -135,6 +179,84 @@ export default function RecordPaymentModal({ isOpen, onClose, ledgerEntry, onSuc
                 <option value="CHEQUE">Cheque</option>
                 <option value="OTHER">Other</option>
               </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label className="form-label">Payment Proof (Optional)</label>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                Upload screenshot, receipt, cheque image, bank slip, or other proof.
+              </p>
+              
+              {!proofFile ? (
+                <div 
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  style={{ 
+                    border: '1px dashed var(--color-border)', 
+                    borderRadius: '0.375rem', 
+                    padding: '1.5rem 1rem', 
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    backgroundColor: 'var(--color-bg-subtle)',
+                    transition: 'border-color 0.2s, background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--color-surface-2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                    e.currentTarget.style.backgroundColor = 'var(--color-bg-subtle)';
+                  }}
+                >
+                  <UploadCloud size={24} style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>Upload payment proof</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>JPG, PNG, WEBP, or PDF (Max 5MB)</div>
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '0.375rem',
+                  backgroundColor: 'var(--color-surface-2)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: '40px', height: '40px', borderRadius: '4px', backgroundColor: 'var(--color-bg)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {proofFile.type === 'application/pdf' ? <FileIcon size={20} color="var(--color-primary)" /> : <FileImage size={20} color="var(--color-success)" />}
+                    </div>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {proofFile.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                        {(proofFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleRemoveFile}
+                    className="btn-icon" 
+                    style={{ color: 'var(--color-danger)' }}
+                    title="Remove file"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              )}
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                style={{ display: 'none' }} 
+              />
             </div>
 
             <div className="form-group">

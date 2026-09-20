@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { getInvoices, downloadInvoicePdf } from '../api/invoices';
 import { getCustomers } from '../api/customers';
+import PageHeader from '../components/layout/PageHeader';
 import { Search, Plus, FilterX, Download, Eye, CheckCircle2, XCircle, Clock, FileText } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 
@@ -122,16 +123,18 @@ export default function InvoiceList() {
   const hasFilters = searchParams.toString().length > 0;
   
   return (
-    <div className="page-content" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-        <h1 className="page-title">Invoices</h1>
-        <button 
-          className="btn btn-primary" 
-          onClick={() => navigate('/invoices/new')}
-        >
-          <Plus size={16} /> New Invoice
-        </button>
-      </div>
+    <div className="page-content page-content-wide">
+      <PageHeader 
+        title="Invoices"
+        action={
+          <button 
+            className="btn btn-primary" 
+            onClick={() => navigate('/invoices/new')}
+          >
+            <Plus size={16} /> New Invoice
+          </button>
+        }
+      />
 
       <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-5)' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>

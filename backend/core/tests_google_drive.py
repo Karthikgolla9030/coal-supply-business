@@ -12,13 +12,16 @@ class GoogleDriveAPITest(APITestCase):
         self.user = User.objects.create_user(username="testadmin", password="password")
         self.client.force_authenticate(user=self.user)
         self.business = BusinessProfile.objects.create(
+            owner=self.user,
             business_name="Test Business",
             gstin="29ABCDE1234F1Z5",
             phone="9876543210",
             state="Karnataka",
-            state_code="29"
+            state_code="29",
+            google_drive_folder_id="folder_id_123"
         )
         self.customer = Customer.objects.create(
+            business=self.business,
             name="Test Customer",
             gstin="29XYZDE1234F1Z5",
             phone="9123456780",
@@ -114,7 +117,8 @@ class GoogleDriveAPITest(APITestCase):
         # Create without drive enabled
         with self.settings(GOOGLE_DRIVE_ENABLED=False):
             response = self.client.post(self.CREATE_URL, self._valid_payload(), format="json")
-            inv_id = response.data["invoice"]["id"]
+            self.assertEqual(response.status_code, 201, response.data)
+        inv_id = response.data["invoice"]["id"]
 
         # Now manually trigger
         with self.settings(GOOGLE_DRIVE_ENABLED=True, GOOGLE_DRIVE_FOLDER_ID="folder_id_123"):
