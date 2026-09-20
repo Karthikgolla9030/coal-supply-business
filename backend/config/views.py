@@ -44,16 +44,34 @@ class HealthCheckView(APIView):
     """
     GET /api/health/
 
-    Returns a simple JSON payload confirming the service is up.
+    Returns a JSON payload confirming the service is up and checking database connectivity.
     Explicitly public — no authentication required.
     """
 
     permission_classes = [AllowAny]
 
     def get(self, request):
+        db_status = "unknown"
+        db_error = None
+        user_count = 0
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user_count = User.objects.count()
+            db_status = "connected"
+        except Exception as e:
+            db_status = "error"
+            db_error = str(e)
+
         return Response(
             {
-                "status": "ok",
+                "status": "ok" if db_status == "connected" else "degraded",
                 "service": "coal-invoice-backend",
+                "database": db_status,
+                "db_error": db_error,
+                "user_count": user_count,
             }
         )
