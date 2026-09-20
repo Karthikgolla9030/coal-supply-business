@@ -126,6 +126,8 @@ else:
     _pgsslmode = os.getenv("PGSSLMODE")
     if _pgsslmode:
         DATABASES["default"].setdefault("OPTIONS", {})["sslmode"] = _pgsslmode
+    elif os.getenv("DB_HOST", "localhost") not in ("localhost", "127.0.0.1"):
+        DATABASES["default"].setdefault("OPTIONS", {})["sslmode"] = "require"
 
 # ─────────────────────────────────────────────
 # Password validation
