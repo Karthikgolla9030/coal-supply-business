@@ -394,7 +394,7 @@ export default function SaleDetailPage() {
 
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)', flexWrap: 'wrap' }}>
             {!isNew && <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setErrors({}); setAlert(null); }}>Cancel</button>}
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? <span className="spinner" /> : <><Save size={16} /> Save Sale</>}
@@ -473,7 +473,7 @@ export default function SaleDetailPage() {
                         <strong>Are you sure you want to void this sale? Its records will be preserved in the history.</strong>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setConfirmArchive(false)}>Cancel</button>
                       <button className="btn btn-danger btn-sm" disabled={saving} onClick={handleArchive}>
                         {saving ? <span className="spinner" /> : 'Void Sale'}

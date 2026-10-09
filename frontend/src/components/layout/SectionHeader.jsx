@@ -2,13 +2,7 @@ import React from 'react';
 
 export default function SectionHeader({ title, description, action }) {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: 'var(--space-4)',
-      gap: 'var(--space-4)'
-    }}>
+    <div className="section-header">
       <div>
         <h2 className="section-title" style={{ marginBottom: description ? 'var(--space-1)' : '0' }}>
           {title}
@@ -19,7 +13,7 @@ export default function SectionHeader({ title, description, action }) {
           </p>
         )}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="section-header-action">{action}</div>}
     </div>
   );
 }

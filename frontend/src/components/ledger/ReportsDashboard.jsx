@@ -286,8 +286,8 @@ export default function ReportsDashboard() {
             No records found for the selected period and filters.
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <div className="table-wrapper" style={{ margin: 0, border: 'none' }}>
+            <table className="table" style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
                   {Object.keys(rows[0]).map((key) => (

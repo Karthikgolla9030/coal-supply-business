@@ -5,7 +5,7 @@ export default function PageHeader({ title, description, action }) {
     <div className="page-header">
       <div className="page-header-content">
         <h1 className="page-title">{title}</h1>
-        {description && <p className="page-subtitle">{description}</p>}
+        {description && <div className="page-subtitle">{description}</div>}
       </div>
       {action && (
         <div className="page-header-action">

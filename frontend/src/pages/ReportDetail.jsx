@@ -276,7 +276,7 @@ export default function ReportDetail() {
           {/* Summary Box */}
           <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
             <div className="card-title" style={{ marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>Report Summary</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '1.5rem' }}>
               {Object.entries(data.summary).map(([key, val], i) => {
                 let displayVal = val;
                 if (typeof val === 'string' && val.match(/^[0-9.]+$/)) {
@@ -295,8 +295,8 @@ export default function ReportDetail() {
             </div>
           </div>
           
-          <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-            <div className="search-bar" style={{ width: '300px' }}>
+          <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', width: '100%' }}>
+            <div className="search-bar" style={{ maxWidth: '300px', width: '100%' }}>
               <span className="search-bar-icon"><Search size={16} /></span>
               <input
                 className="form-input"
@@ -316,8 +316,8 @@ export default function ReportDetail() {
               message="No records match the selected filters. Try changing the date range or search terms."
             />
           ) : (
-            <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
-              <table style={{ margin: 0 }}>
+            <div className="card table-wrapper" style={{ padding: '0', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ margin: 0, minWidth: '680px' }}>
                 <thead>
                   <tr>
                     {Object.keys(processedRows[0]).filter(k => !k.startsWith('_')).map(key => (

@@ -184,7 +184,7 @@ export default function BusinessProfilePage() {
             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: 'var(--space-4)', color: 'var(--color-primary)' }}>
               {savedProfile.business_name || 'Business Name Not Set'}
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
               <div>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>GSTIN</p>
                 <p style={{ fontWeight: '500' }}>{savedProfile.gstin || '-'}</p>
@@ -210,7 +210,7 @@ export default function BusinessProfilePage() {
 
           <div className="card">
             <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: 'var(--space-4)' }}>Bank Details</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
               <div>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Bank Name</p>
                 <p style={{ fontWeight: '500' }}>{savedProfile.bank_name || '-'}</p>
@@ -397,7 +397,7 @@ export default function BusinessProfilePage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-4)', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-4)', gap: '1rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn btn-secondary btn-lg"

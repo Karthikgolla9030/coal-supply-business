@@ -360,7 +360,7 @@ export default function PurchaseDetailPage() {
 
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)', flexWrap: 'wrap' }}>
             {!isNew && <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setErrors({}); setAlert(null); }}>Cancel</button>}
             <button type="submit" className="btn btn-primary" disabled={saving}>
               {saving ? <span className="spinner" /> : <><Save size={16} /> Save Purchase</>}
@@ -410,7 +410,7 @@ export default function PurchaseDetailPage() {
             {purchase.is_active && (
               <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
                 {confirmArchive ? (
-                  <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>Are you sure you want to delete/archive this purchase?</span>
                     <button className="btn btn-danger btn-sm" disabled={saving} onClick={handleArchive}>
                       {saving ? <span className="spinner" /> : 'Yes, Archive'}

@@ -80,8 +80,8 @@ function CustomerInvoiceHistory({ customerId }) {
 
   return (
     <div>
-      <div style={{ overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '6px' }}>
-        <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+      <div className="table-wrapper" style={{ overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '6px' }}>
+        <table className="table" style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--color-bg-subtle)', textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
               <th style={{ padding: '0.75rem' }}>Invoice</th>
@@ -150,7 +150,7 @@ function CustomerSaleHistory({ customerId }) {
   return (
     <div>
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '1rem', margin: 0 }}>
           <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Total Sales</div>
           <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{summary?.total_sales || 0}</div>
@@ -179,8 +179,8 @@ function CustomerSaleHistory({ customerId }) {
           <button className="btn btn-primary" onClick={() => navigate('/sales/new')}>Add Sale</button>
         } />
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
-          <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <div className="table-wrapper" style={{ border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
+          <table className="table" style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--color-bg-subtle)', textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
                 <th style={{ padding: '0.75rem' }}>Date</th>
@@ -270,7 +270,7 @@ function CustomerLedgerHistory({ customer, onRefresh }) {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '1rem', margin: 0 }}>
           <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Total Orders / Trucks</div>
           <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{totalOrders} / {totalTrucks}</div>
@@ -320,8 +320,8 @@ function CustomerLedgerHistory({ customer, onRefresh }) {
       ) : entries.length === 0 ? (
         <EmptyState icon={<FileText size={48} />} title="No Ledger Entries" message={`This customer does not have any ${transactionType === 'RECEIVABLE' ? 'Money to Receive' : 'Money to Pay'} transactions yet.`} />
       ) : (
-        <div style={{ overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
-          <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <div className="table-wrapper" style={{ border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
+          <table className="table" style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--color-bg-subtle)', textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
                 <th style={{ padding: '0.75rem' }}>Date</th>
@@ -688,8 +688,8 @@ function CustomerForm({ onSaved }) {
                 <label htmlFor="customer_gstin">
                   GSTIN <span className="required">*</span>
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                     <input
                       type="text"
                       id="customer_gstin"
@@ -1045,8 +1045,8 @@ function CustomerDetail({ id }) {
                   <label htmlFor="edit_gstin">
                     GSTIN <span className="required">*</span>
                   </label>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                       <input
                         type="text"
                         id="edit_gstin"
@@ -1108,7 +1108,7 @@ function CustomerDetail({ id }) {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setErrors({}); setAlert(null); setGstVerifyMsg(null); }}>
               Cancel
             </button>
@@ -1119,7 +1119,7 @@ function CustomerDetail({ id }) {
         </form>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+          <div className="tab-bar-scroll" style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', whiteSpace: 'nowrap' }}>
             {['overview', 'sales', 'invoices', 'ledger'].map(tab => (
               <button
                 key={tab}

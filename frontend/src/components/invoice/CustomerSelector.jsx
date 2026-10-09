@@ -186,7 +186,7 @@ function CustomerDisplay({ customer, onClear, onEdit }) {
           </button>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 'var(--space-2)' }}>
         {fields.map(([label, value]) => value ? (
           <div key={label}>
             <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>

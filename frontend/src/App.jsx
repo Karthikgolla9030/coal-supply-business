@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
+import MobileHeader from './components/layout/MobileHeader';
 import Dashboard from './pages/Dashboard';
 import BusinessProfile from './pages/BusinessProfile';
 import Customers from './pages/Customers';
@@ -27,19 +29,38 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Ledger from './pages/Ledger';
 
-// Layout wrapper for protected pages that need the sidebar
+// Layout wrapper for protected pages that need the sidebar & mobile header
 function AppLayout({ children }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Close mobile drawer on route navigation
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   return (
     <div className="app-layout">
-      <Sidebar />
-      <main className="app-main">
+      <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+      <div className="app-main">
+        <MobileHeader onToggleMenu={() => setMenuOpen((prev) => !prev)} />
         {children}
-      </main>
+      </div>
     </div>
   );
 }
-
-import { useEffect } from 'react';
 
 export default function App() {
   useEffect(() => {

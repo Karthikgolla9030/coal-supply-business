@@ -91,8 +91,8 @@ export default function Dashboard() {
         title="Business Dashboard"
         description="Track your business performance and activity."
         action={
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <select className="form-input" value={dateRange} onChange={e => setDateRange(e.target.value)} style={{ width: 'auto' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select className="form-input" value={dateRange} onChange={e => setDateRange(e.target.value)} style={{ width: 'auto', minWidth: '140px' }}>
               <option>All Time</option>
               <option>Today</option>
               <option>This Week</option>
@@ -103,11 +103,11 @@ export default function Dashboard() {
               <option>Custom Range</option>
             </select>
             {dateRange === 'Custom Range' && (
-              <>
-                <input type="date" className="form-input" value={customStart} onChange={e => setCustomStart(e.target.value)} />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <input type="date" className="form-input" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 'auto' }} />
                 <span>to</span>
-                <input type="date" className="form-input" value={customEnd} onChange={e => setCustomEnd(e.target.value)} />
-              </>
+                <input type="date" className="form-input" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 'auto' }} />
+              </div>
             )}
           </div>
         }
@@ -121,7 +121,7 @@ export default function Dashboard() {
           title="NO BUSINESS ACTIVITY YET"
           message="No business activity has been recorded yet for this period."
           action={
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={() => navigate('/purchases/new')}>Add Purchase</button>
               <button className="btn btn-primary" onClick={() => navigate('/sales/new')}>Add Sale</button>
               <button className="btn btn-primary" onClick={() => navigate('/expenses/new')}>Add Expense</button>
@@ -283,11 +283,11 @@ export default function Dashboard() {
             </div>
           </div>
           {/* Charts & Activity */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', width: '100%', minWidth: 0 }}>
             
             {/* Business Overview Chart */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: '2 1 500px' }}>
-              <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'none', paddingBottom: '0', marginBottom: '1.5rem' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: '2 1 min(100%, 500px)', minWidth: 0, width: '100%' }}>
+              <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'none', paddingBottom: '0', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                   <span style={{ color: 'var(--color-text)', letterSpacing: '0.05em' }}>BUSINESS OVERVIEW</span>
@@ -298,7 +298,7 @@ export default function Dashboard() {
                   </select>
                 </div>
               </div>
-              <div style={{ height: '300px', width: '100%', marginTop: '1rem' }}>
+              <div style={{ height: '300px', width: '100%', minWidth: 0, marginTop: '1rem' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={[
@@ -325,7 +325,7 @@ export default function Dashboard() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                   <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-primary)' }}></div> Sales (₹)
                 </div>
@@ -336,7 +336,7 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Activity */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: '1 1 300px' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: '1 1 min(100%, 300px)', minWidth: 0, width: '100%' }}>
               <div className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'none', paddingBottom: '0', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -357,21 +357,21 @@ export default function Dashboard() {
                         else if (act.type === 'PURCHASE') navigate(`/purchases/${act.id}`);
                         else if (act.type === 'EXPENSE') navigate(`/expenses/${act.id}`);
                       }}>
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', minWidth: 0, flex: 1 }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: act.type === 'SALE' ? 'var(--color-success-soft)' : act.type === 'PURCHASE' ? 'var(--color-primary-soft)' : 'var(--color-danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {act.type === 'SALE' ? <Tag size={16} color="var(--color-success)" /> : act.type === 'PURCHASE' ? <ShoppingCart size={16} color="var(--color-primary)" /> : <Receipt size={16} color="var(--color-danger)" />}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          <span style={{ fontWeight: 500, color: 'var(--color-text)', fontSize: '0.9rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0, overflow: 'hidden' }}>
+                          <span style={{ fontWeight: 500, color: 'var(--color-text)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {act.type === 'SALE' ? 'Sale Entry Added' : act.type === 'PURCHASE' ? 'Purchase Entry Added' : 'Expense Entry Added'}
                           </span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {act.quantity ? `${Number(act.quantity).toLocaleString()} MT ` : ''}
                             {act.type === 'SALE' ? `to ${act.party}` : act.type === 'PURCHASE' ? `from ${act.party}` : `${act.party}`}
                           </span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', flexShrink: 0, marginLeft: '0.5rem' }}>
                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                             {new Date(act.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                          </span>

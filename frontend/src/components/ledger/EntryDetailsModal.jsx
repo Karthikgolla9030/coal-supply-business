@@ -281,7 +281,7 @@ export default function EntryDetailsModal({ isOpen, onClose, ledgerEntry, onReco
                   ) : (
                     <>
                       <div className="table-wrapper" style={{ overflowX: 'auto', marginBottom: '1.5rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                        <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                           <thead>
                             <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
                               <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>DATE</th>

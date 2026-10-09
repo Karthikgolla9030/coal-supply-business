@@ -56,7 +56,7 @@ function SupplierPurchaseSummary({ supplierId }) {
   return (
     <div className="card">
       <div className="card-title">Purchase Summary</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '1rem' }}>
         <div>
           <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>Total Purchases</div>
           <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{summary.total_purchases}</div>
@@ -390,7 +390,7 @@ function SupplierDetail({ id }) {
         </form>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+          <div className="tab-bar-scroll" style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', whiteSpace: 'nowrap' }}>
             {['overview'].map(tab => (
               <button
                 key={tab}

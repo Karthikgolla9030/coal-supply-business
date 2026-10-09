@@ -278,11 +278,11 @@ export default function TransactionHistoryList() {
       )}
 
       {/* Transaction Table */}
-      <div className="card" style={{ padding: 0, overflowX: 'auto', marginBottom: 0 }}>
+      <div className="card table-wrapper" style={{ padding: 0, marginBottom: 0 }}>
         {loading ? (
            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading transactions...</div>
         ) : transactions.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
                 <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Date</th>

@@ -56,8 +56,8 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
         <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>{errors}</div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}>
+      <div className="table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}>
           <thead>
             <tr style={{ background: 'var(--color-surface-2)' }}>
               {['Sl', 'Product Name *', 'HSN Code', 'Qty *', 'Unit', 'Rate (₹) *', 'Amount (₹)', ''].map((h) => (

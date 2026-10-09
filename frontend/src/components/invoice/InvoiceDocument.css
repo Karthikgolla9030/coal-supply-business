@@ -229,6 +229,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .invoice-document-wrapper {
+    padding: 1rem 0.5rem;
+  }
+
   .invoice-document {
     padding: 1.5rem;
   }
@@ -257,3 +261,22 @@
     flex-direction: column;
   }
 }
+
+@media (max-width: 640px) {
+  .invoice-document-wrapper {
+    padding: 0.75rem 0.25rem;
+  }
+
+  .invoice-document {
+    padding: 1rem 0.75rem;
+  }
+
+  .business-title {
+    font-size: 1.25rem;
+  }
+
+  .invoice-table {
+    min-width: 520px;
+  }
+}
+

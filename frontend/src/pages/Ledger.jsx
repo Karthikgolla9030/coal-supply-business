@@ -146,15 +146,14 @@ export default function Ledger() {
       )}
 
       {/* Tabs */}
-      <div style={{ marginBottom: '2rem' }}>
+      <div className="tab-bar-scroll" style={{ marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
         <div style={{ 
           display: 'inline-flex', 
           background: 'var(--color-surface)', 
           padding: '0.25rem', 
           borderRadius: '0.75rem',
           border: '1px solid var(--color-border)',
-          overflowX: 'auto',
-          maxWidth: '100%'
+          whiteSpace: 'nowrap'
         }}>
           {tabsConfig.map(tab => {
             const Icon = tab.icon;
@@ -196,7 +195,7 @@ export default function Ledger() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h2 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--color-text)', marginBottom: '0.25rem' }}>
                 {activeTab}
@@ -206,7 +205,7 @@ export default function Ledger() {
               </p>
             </div>
             
-            <div style={{ position: 'relative', width: '300px' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
               <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
               <input
                 type="text"
@@ -214,7 +213,7 @@ export default function Ledger() {
                 placeholder="Search party or reference..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
+                style={{ paddingLeft: '2.5rem', width: '100%' }}
               />
             </div>
           </div>
@@ -240,8 +239,8 @@ export default function Ledger() {
                 )}
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <div className="table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table className="table" style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                   <thead>
                     {activeTab === 'Paid' ? (
                       <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>

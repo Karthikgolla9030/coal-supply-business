@@ -156,7 +156,7 @@ export default function LedgerDashboard() {
       </div>
 
       {/* Top Financial Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
         <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: 0, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CUSTOMERS STILL NEED TO PAY</div>
@@ -218,9 +218,9 @@ export default function LedgerDashboard() {
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: 'var(--color-text)' }}>RECENT ACTIVITY</h3>
         </div>
-        <div style={{ padding: '0', overflowX: 'auto' }}>
+        <div className="table-wrapper" style={{ padding: '0', margin: 0, border: 'none' }}>
           {recentActivity.length > 0 ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table className="table" style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
                   <th style={{ textAlign: 'left', padding: '0.75rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>Date</th>

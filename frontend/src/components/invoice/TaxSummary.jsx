@@ -37,7 +37,7 @@ export default function TaxSummary({ business, customer, taxableAmount, data, er
         </div>
       )}
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         <div>
           <h4 style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem', fontSize: '0.875rem' }}>Seller State</h4>
           <div style={{ fontWeight: '500' }}>
@@ -53,7 +53,7 @@ export default function TaxSummary({ business, customer, taxableAmount, data, er
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
         <div>
           <h4 style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem', fontSize: '0.875rem' }}>Transaction Type</h4>
           <div style={{ fontWeight: '500' }}>
@@ -68,7 +68,7 @@ export default function TaxSummary({ business, customer, taxableAmount, data, er
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-5)', alignItems: 'end' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 'var(--space-4)', alignItems: 'end' }}>
         <div className="form-field">
           <label htmlFor="gst_rate">GST Rate (%)</label>
           <div className="input-group">

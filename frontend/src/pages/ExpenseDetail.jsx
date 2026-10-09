@@ -240,7 +240,7 @@ export default function ExpenseDetail() {
           <textarea className="form-input" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes..." />
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             <Save size={16} /> {saving ? 'Saving...' : 'Save Expense'}
           </button>

@@ -216,7 +216,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                 {/* ORDER DETAILS */}
                 <div>
                   <h3 style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', fontWeight: 600 }}>Order Details</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" htmlFor="saleOrderNo" style={{ display: 'block', marginBottom: '0.25rem' }}>Sale Order No.</label>
                       <input 
@@ -245,7 +245,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                 {/* DELIVERY DETAILS */}
                 <div>
                   <h3 style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', fontWeight: 600 }}>Delivery Details</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" htmlFor="truckNo" style={{ display: 'block', marginBottom: '0.25rem' }}>Truck No.</label>
                       <input 
@@ -278,7 +278,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                 {/* PRICING */}
                 <div>
                   <h3 style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', fontWeight: 600 }}>Pricing</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" htmlFor="ratePerTon" style={{ display: 'block', marginBottom: '0.25rem' }}>Rate per Ton <span className="required">*</span></label>
                       <input 
@@ -301,7 +301,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginTop: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem', marginTop: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" htmlFor="tcsRate" style={{ display: 'block', marginBottom: '0.25rem' }}>TCS Rate (%)</label>
                       <input 
@@ -328,7 +328,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                 {/* PAYMENT / BALANCE */}
                 <div>
                   <h3 style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', fontWeight: 600 }}>Payment / Balance</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0, gridColumn: '1 / -1' }}>
                       <label className="form-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Total Amount</label>
                       <div className="form-input" style={{ backgroundColor: 'var(--color-bg-subtle)', color: calculatedAmount ? 'var(--color-text)' : 'var(--color-text-muted)', display: 'flex', alignItems: 'center', fontSize: '1.125rem', fontWeight: '600', padding: '0.75rem 1rem' }}>
@@ -353,7 +353,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                 {/* ADDITIONAL INFORMATION */}
                 <div>
                   <h3 style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', fontWeight: 600 }}>Additional Information</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label" htmlFor="reference" style={{ display: 'block', marginBottom: '0.25rem' }}>Reference / Reason</label>
                       <input 
@@ -399,7 +399,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                   helperText={'Select the supplier, transporter, or other party you need to pay.'}
                 />
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label" htmlFor="amount" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount (₹) <span className="required">*</span></label>
                     <input 
@@ -417,7 +417,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label" htmlFor="purchaseOrderNo" style={{ display: 'block', marginBottom: '0.25rem' }}>Purchase Order No.</label>
                     <input 
@@ -477,7 +477,7 @@ export default function AddEntryModal({ isOpen, onClose, onSuccess }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.25rem' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label" htmlFor="reference" style={{ display: 'block', marginBottom: '0.25rem' }}>Reference / Reason</label>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Invoice number, bill number, or reason.</div>
