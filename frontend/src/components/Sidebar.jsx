@@ -53,7 +53,10 @@ export default function Sidebar({ isOpen, onClose }) {
         aria-hidden={!isOpen}
       />
 
-      <aside className={`sidebar${isOpen ? ' mobile-open' : ''}`}>
+      <aside 
+        className={`sidebar${isOpen ? ' mobile-open' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div className="sidebar-logo">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>

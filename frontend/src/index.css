@@ -274,106 +274,6 @@ input[type="number"]::-webkit-outer-spin-button {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  :root {
-    --page-padding-y: var(--space-6);
-    --page-padding-x: var(--space-6);
-    --section-gap: var(--space-8);
-  }
-
-  .mobile-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 60px;
-    padding: 0 var(--space-4);
-    background: rgba(7, 9, 11, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    position: sticky;
-    top: 0;
-    z-index: 90;
-    width: 100%;
-  }
-
-  .app-main {
-    margin-left: 0;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 280px;
-    max-width: 85vw;
-    height: 100vh;
-    height: 100dvh;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1000;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
-    background: #0B0E11;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-
-  .sidebar-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 999;
-  }
-
-  .sidebar-backdrop.active {
-    display: block;
-  }
-
-  .sidebar-close-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-md);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition: all var(--transition);
-  }
-
-  .sidebar-close-btn:hover {
-    color: var(--color-text);
-    background: rgba(255, 255, 255, 0.1);
-  }
-}
-
-@media (max-width: 768px) {
-  :root {
-    --page-padding-y: var(--space-5);
-    --page-padding-x: var(--space-4);
-    --section-gap: var(--space-6);
-  }
-}
-
-@media (max-width: 380px) {
-  :root {
-    --page-padding-y: var(--space-4);
-    --page-padding-x: var(--space-3);
-    --section-gap: var(--space-5);
-  }
-}
-
 /* For data-heavy pages that need more horizontal space but still respect boundaries */
 .page-content-wide {
   max-width: 1600px;
@@ -545,13 +445,9 @@ input[type="number"]::-webkit-outer-spin-button {
   line-height: 1.2;
   color: var(--color-text);
   letter-spacing: -0.01em;
-  word-break: break-word;
-}
-
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 1.5rem;
-  }
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 
 .page-subtitle {
@@ -569,13 +465,8 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-bottom: var(--space-4);
   letter-spacing: 0;
   text-transform: none;
-  word-break: break-word;
-}
-
-@media (max-width: 768px) {
-  .section-title {
-    font-size: 1.15rem;
-  }
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .section-header {
@@ -1356,18 +1247,191 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* ── Global Mobile Responsiveness Enhancements ──────────────── */
+/* ── Global Responsive System ─────────────────────────────────── */
 
-/* 1. Prevent iOS Auto-Zoom on inputs & ensure comfortable touch sizing */
+/* ── Tablet & Mobile (<= 1024px) ───────────────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --page-padding-y: var(--space-6);
+    --page-padding-x: var(--space-6);
+    --section-gap: var(--space-8);
+  }
+
+  /* CRITICAL: Overrides desktop sidebar offset and 100vw - 240px clamp */
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .page-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Full-width sticky mobile header */
+  .mobile-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    padding: 0 var(--space-4);
+    background: rgba(11, 14, 17, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Backdrop: behind sidebar drawer */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1040 !important;
+  }
+
+  .sidebar-backdrop.active {
+    display: block !important;
+  }
+
+  /* Sidebar Drawer: in front of backdrop, completely opaque and tappable */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 290px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    z-index: 1050 !important; /* CRITICAL: Higher than backdrop (1040) */
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.8) !important;
+    background: #0E1216 !important; /* SOLID, NEVER TRANSPARENT */
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    pointer-events: auto !important;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .sidebar-link {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.925rem;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+}
+
+/* ── Mobile Viewports (<= 768px) ───────────────────────────────── */
 @media (max-width: 768px) {
+  :root {
+    --page-padding-y: var(--space-4);
+    --page-padding-x: var(--space-4);
+    --section-gap: var(--space-5);
+  }
+
+  /* 1. Prevent iOS Auto-Zoom on inputs & touch target sizing */
   input, select, textarea,
   .form-input, .form-control, .form-textarea {
     font-size: 16px !important;
   }
-}
 
-/* 2. Responsive Card Grid on Mobile */
-@media (max-width: 768px) {
+  /* 2. Responsive Page Header */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    width: 100%;
+  }
+
+  .page-header-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-header-action {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-header-action > * {
+    width: 100%;
+  }
+
+  .page-header-action select {
+    width: 100% !important;
+    min-height: 44px;
+  }
+
+  .page-header-action .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 3. Typography & Clean Word-Wrapping */
+  .page-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: none;
+  }
+
+  .page-subtitle {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+  }
+
+  .section-title {
+    font-size: 1.15rem;
+    line-height: 1.3;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* 4. Responsive Card Grid */
   .card-grid {
     grid-template-columns: 1fr;
     gap: var(--space-4);
@@ -1376,11 +1440,11 @@ input[type='number'] {
   .card {
     padding: var(--space-4);
     margin-bottom: var(--space-4);
+    width: 100%;
+    box-sizing: border-box;
   }
-}
 
-/* 3. Detail Rows vertical stacking on Mobile */
-@media (max-width: 768px) {
+  /* 5. Detail Rows */
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
@@ -1398,12 +1462,11 @@ input[type='number'] {
     width: 100%;
     word-break: break-word;
   }
-}
 
-/* 4. Modals on Mobile Viewports */
-@media (max-width: 768px) {
+  /* 6. Modals on Mobile Viewports */
   .modal-backdrop {
     padding: var(--space-2);
+    z-index: 1100;
   }
 
   .modal {
@@ -1438,10 +1501,8 @@ input[type='number'] {
   .modal-footer .btn {
     width: 100%;
   }
-}
 
-/* 5. Toolbars & Action Bars on Mobile */
-@media (max-width: 768px) {
+  /* 7. Toolbars & Action Bars */
   .toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -1462,9 +1523,41 @@ input[type='number'] {
     min-height: 40px;
     height: 40px;
   }
+
+  /* 8. Empty States on Mobile */
+  .empty-state {
+    padding: var(--space-8) var(--space-3);
+  }
+
+  .empty-state-title {
+    font-size: 1.05rem;
+    word-break: normal;
+  }
+
+  .empty-state-message {
+    max-width: 100%;
+    font-size: 0.85rem;
+  }
 }
 
-/* 6. Scrollable Tab Bars for Multi-tab interfaces */
+/* ── Extra-Small Screens (<= 380px) ────────────────────────────── */
+@media (max-width: 380px) {
+  :root {
+    --page-padding-y: var(--space-3);
+    --page-padding-x: var(--space-3);
+    --section-gap: var(--space-4);
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .mobile-header-title {
+    font-size: 0.8rem;
+  }
+}
+
+/* ── Scrollable Tab Bars for Multi-tab interfaces ─────────────── */
 .tabs-container, .tab-bar-scroll {
   display: flex;
   overflow-x: auto;
@@ -1481,7 +1574,7 @@ input[type='number'] {
   display: none;
 }
 
-/* 7. Stat & metric card text wrapping */
+/* ── Metric Card Text Wrapping ────────────────────────────────── */
 .stat-value, .metric-value {
   word-break: break-word;
   overflow-wrap: break-word;
