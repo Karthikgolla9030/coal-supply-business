@@ -81,12 +81,12 @@ export default function InvoiceDocument({ invoice }) {
           <table className="invoice-table">
             <thead>
               <tr>
-                <th style={{ width: '5%' }}>Sl</th>
-                <th style={{ width: '35%' }}>Product</th>
-                <th style={{ width: '10%' }}>HSN</th>
-                <th style={{ width: '15%' }}>Qty</th>
-                <th style={{ width: '15%' }}>Rate</th>
-                <th style={{ width: '20%' }} className="text-right">Amount</th>
+                <th style={{ width: '6%' }}>S.No</th>
+                <th style={{ width: '34%' }}>Description</th>
+                <th style={{ width: '14%' }}>HSN CODE</th>
+                <th style={{ width: '12%' }}>Qty</th>
+                <th style={{ width: '16%' }}>Rate</th>
+                <th style={{ width: '18%' }} className="text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
