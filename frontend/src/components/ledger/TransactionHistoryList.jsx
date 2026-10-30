@@ -277,92 +277,140 @@ export default function TransactionHistoryList() {
         </div>
       )}
 
-      {/* Transaction Table */}
-      <div className="card table-wrapper" style={{ padding: 0, marginBottom: 0 }}>
+      {/* Transaction Table & Cards */}
+      <div className="card" style={{ padding: 0, marginBottom: 0 }}>
         {loading ? (
            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading transactions...</div>
         ) : transactions.length > 0 ? (
-          <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Date</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Party</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Type</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Reference</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'right' }}>Amount</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'center' }}>Status</th>
-                <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'center' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop Table */}
+            <div className="desktop-only table-wrapper">
+              <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Date</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Party</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Type</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500' }}>Reference</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'right' }}>Amount</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'center' }}>Status</th>
+                    <th style={{ padding: '0.75rem 1.5rem', fontWeight: '500', textAlign: 'center' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((txn, idx) => {
+                    const label = getTransactionTypeLabel(txn.record_type, txn.unified_transaction_type, txn.unified_reference);
+                    const isPositive = txn.unified_transaction_type === 'RECEIVABLE';
+                    const statusColor = statusColors[txn.unified_status] || { bg: '#f3f4f6', text: '#374151' };
+
+                    return (
+                      <tr 
+                        key={`${txn.record_type}-${txn.id}-${idx}`} 
+                        style={{ borderBottom: '1px solid var(--color-border)', transition: 'background-color 0.15s' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <td style={{ padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text)' }}>{txn.unified_date}</td>
+                        
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          {txn.unified_party_id ? (
+                            <Link to={`/customers/${txn.unified_party_id}`} style={{ fontWeight: '500', color: 'var(--color-text)', textDecoration: 'none' }}>
+                              {txn.unified_party_name}
+                            </Link>
+                          ) : (
+                            <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>{txn.unified_party_name}</span>
+                          )}
+                        </td>
+                        
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>{label}</span>
+                          {txn.unified_method && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-faint)', marginTop: '0.25rem' }}>Method: {txn.unified_method}</div>}
+                        </td>
+
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          {txn.unified_invoice_id ? (
+                             <Link to={`/invoices/${txn.unified_invoice_id}`} style={{ fontWeight: '500', color: 'var(--color-primary-light)', textDecoration: 'none' }}>
+                               Invoice {txn.unified_reference}
+                             </Link>
+                          ) : (
+                            <span style={{ color: 'var(--color-text-muted)' }}>{txn.unified_reference || '-'}</span>
+                          )}
+                        </td>
+
+                        <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: (txn.unified_status === 'VOIDED') ? 'var(--color-text-muted)' : (isPositive ? 'var(--color-primary-light)' : 'var(--color-text)'), textDecoration: txn.unified_status === 'VOIDED' ? 'line-through' : 'none' }}>
+                           {isPositive ? '+' : '-'}{formatMoney(txn.unified_amount)}
+                        </td>
+
+                        <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            padding: '0.125rem 0.5rem',
+                            borderRadius: '0.375rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            backgroundColor: statusColor.bg,
+                            color: statusColor.text,
+                            border: statusColor.border || '1px solid transparent'
+                          }}>
+                            {txn.unified_status.replace('_', ' ')}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                          <button className="btn btn-sm btn-secondary" onClick={() => openDetails(txn)} style={{ padding: '0.25rem 0.5rem' }}>
+                            <Eye size={16} /> View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="mobile-card-list" style={{ padding: '10px' }}>
               {transactions.map((txn, idx) => {
                 const label = getTransactionTypeLabel(txn.record_type, txn.unified_transaction_type, txn.unified_reference);
                 const isPositive = txn.unified_transaction_type === 'RECEIVABLE';
                 const statusColor = statusColors[txn.unified_status] || { bg: '#f3f4f6', text: '#374151' };
-
                 return (
-                  <tr 
-                    key={`${txn.record_type}-${txn.id}-${idx}`} 
-                    style={{ borderBottom: '1px solid var(--color-border)', transition: 'background-color 0.15s' }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  <div 
+                    key={`${txn.record_type}-${txn.id}-${idx}`}
+                    className="mobile-card-item"
+                    onClick={() => openDetails(txn)}
                   >
-                    <td style={{ padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text)' }}>{txn.unified_date}</td>
-                    
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      {txn.unified_party_id ? (
-                        <Link to={`/customers/${txn.unified_party_id}`} style={{ fontWeight: '500', color: 'var(--color-text)', textDecoration: 'none' }}>
-                          {txn.unified_party_name}
-                        </Link>
-                      ) : (
-                        <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>{txn.unified_party_name}</span>
-                      )}
-                    </td>
-                    
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>{label}</span>
-                      {txn.unified_method && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-faint)', marginTop: '0.25rem' }}>Method: {txn.unified_method}</div>}
-                    </td>
-
-                    <td style={{ padding: '1rem 1.5rem' }}>
-                      {txn.unified_invoice_id ? (
-                         <Link to={`/invoices/${txn.unified_invoice_id}`} style={{ fontWeight: '500', color: 'var(--color-primary-light)', textDecoration: 'none' }}>
-                           Invoice {txn.unified_reference}
-                         </Link>
-                      ) : (
-                        <span style={{ color: 'var(--color-text-muted)' }}>{txn.unified_reference || '-'}</span>
-                      )}
-                    </td>
-
-                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: (txn.unified_status === 'VOIDED') ? 'var(--color-text-muted)' : (isPositive ? 'var(--color-primary-light)' : 'var(--color-text)'), textDecoration: txn.unified_status === 'VOIDED' ? 'line-through' : 'none' }}>
-                       {isPositive ? '+' : '-'}{formatMoney(txn.unified_amount)}
-                    </td>
-
-                    <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                    <div className="mobile-card-header">
+                      <div className="mobile-card-title">{txn.unified_party_name}</div>
                       <span style={{
                         display: 'inline-flex',
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '0.375rem',
-                        fontSize: '0.7rem',
+                        padding: '2px 7px',
+                        borderRadius: '5px',
+                        fontSize: '11px',
                         fontWeight: '600',
                         backgroundColor: statusColor.bg,
                         color: statusColor.text,
-                        border: statusColor.border || '1px solid transparent'
                       }}>
                         {txn.unified_status.replace('_', ' ')}
                       </span>
-                    </td>
-
-                    <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                      <button className="btn btn-sm btn-secondary" onClick={() => openDetails(txn)} style={{ padding: '0.25rem 0.5rem' }}>
-                        <Eye size={16} /> View
-                      </button>
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-subtitle">{label} • {txn.unified_date}</span>
+                      <div className="mobile-card-amount" style={{ color: isPositive ? 'var(--color-primary)' : 'var(--color-text)' }}>
+                        {isPositive ? '+' : '-'}{formatMoney(txn.unified_amount)}
+                      </div>
+                    </div>
+                    {txn.unified_reference && (
+                      <div className="mobile-card-meta">
+                        <span>Ref: {txn.unified_reference}</span>
+                        {txn.unified_method && <span>Method: {txn.unified_method}</span>}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         ) : (
           <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
              <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>No transactions match this filter.</p>

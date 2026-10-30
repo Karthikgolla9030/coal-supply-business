@@ -73,7 +73,7 @@ export default function SuppliersPage() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 280px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="supplier-search"
@@ -85,13 +85,14 @@ export default function SuppliersPage() {
           />
         </div>
         
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }}>
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
+            style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary)' }}
           />
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Show inactive</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Show inactive</span>
         </label>
       </FilterBar>
 
@@ -108,7 +109,7 @@ export default function SuppliersPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && suppliers.length === 0 && (
         <EmptyState
           icon={<Truck size={48} />}
@@ -130,7 +131,8 @@ export default function SuppliersPage() {
 
       {!loading && !error && suppliers.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -164,6 +166,55 @@ export default function SuppliersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {suppliers.map((s) => (
+              <div 
+                key={s.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/suppliers/${s.id}`)}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">{s.name}</div>
+                  <span className="mobile-card-badge">
+                    {s.gstin || s.aadhaar_no || 'Supplier'}
+                  </span>
+                </div>
+
+                <div className="mobile-card-row">
+                  {s.state && <span className="mobile-card-subtitle">{s.state}</span>}
+                  {s.phone && (
+                    <a 
+                      href={`tel:${s.phone}`} 
+                      onClick={(e) => e.stopPropagation()} 
+                      className="mobile-card-meta-item"
+                      style={{ color: 'var(--color-primary)', fontSize: '13px' }}
+                    >
+                      <Phone size={13} /> {s.phone}
+                    </a>
+                  )}
+                </div>
+
+                <div className="mobile-card-actions" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    style={{ flex: 1 }}
+                    onClick={() => navigate(`/suppliers/${s.id}`)}
+                  >
+                    View Details
+                  </button>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    style={{ flex: 1 }}
+                    onClick={() => navigate(`/suppliers/${s.id}`, { state: { edit: true } })}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}

@@ -56,7 +56,8 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
         <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>{errors}</div>
       )}
 
-      <div className="table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      {/* Desktop Table View */}
+      <div className="desktop-only table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: 'var(--font-size-sm)' }}>
           <thead>
             <tr style={{ background: 'var(--color-surface-2)' }}>
@@ -207,6 +208,125 @@ export default function InvoiceItemsSection({ items, errors, onChange, onAdd, on
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {items.map((item, idx) => (
+          <div key={idx} style={{ 
+            background: 'var(--color-surface-2)', 
+            border: '1px solid var(--color-border)', 
+            borderRadius: '10px', 
+            padding: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--color-text-muted)' }}>Item #{idx + 1}</span>
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(idx)}
+                  style={{
+                    background: 'var(--color-danger-soft)',
+                    border: '1px solid var(--color-danger-border)',
+                    color: 'var(--color-danger)',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={13} /> Remove
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', display: 'block' }}>Product Name *</label>
+              <input
+                className={`form-input${getItemError(idx, 'product_name') ? ' error' : ''}`}
+                type="text"
+                placeholder="e.g. Coal"
+                value={item.product_name}
+                onChange={(e) => onChange(idx, 'product_name', e.target.value)}
+              />
+              {getItemError(idx, 'product_name') && (
+                <p className="form-error">{getItemError(idx, 'product_name')}</p>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', display: 'block' }}>HSN Code</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="2701"
+                  value={item.hsn_code}
+                  onChange={(e) => onChange(idx, 'hsn_code', e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', display: 'block' }}>Unit</label>
+                <select
+                  className="form-control"
+                  value={item.unit}
+                  onChange={(e) => onChange(idx, 'unit', e.target.value)}
+                >
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', display: 'block' }}>Quantity *</label>
+                <input
+                  className={`form-input${getItemError(idx, 'quantity') ? ' error' : ''}`}
+                  type="number"
+                  placeholder="0.00"
+                  step="0.001"
+                  min="0.001"
+                  value={item.quantity}
+                  onChange={(e) => onChange(idx, 'quantity', e.target.value)}
+                />
+                {getItemError(idx, 'quantity') && (
+                  <p className="form-error">{getItemError(idx, 'quantity')}</p>
+                )}
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px', display: 'block' }}>Rate (₹) *</label>
+                <input
+                  className={`form-input${getItemError(idx, 'rate') ? ' error' : ''}`}
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  value={item.rate}
+                  onChange={(e) => onChange(idx, 'rate', e.target.value)}
+                />
+                {getItemError(idx, 'rate') && (
+                  <p className="form-error">{getItemError(idx, 'rate')}</p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Estimated Amount</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' }}>
+                {displayAmount(item.quantity, item.rate)}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
       <p style={{

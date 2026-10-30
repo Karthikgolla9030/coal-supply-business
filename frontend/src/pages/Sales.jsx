@@ -142,7 +142,7 @@ export default function SalesPage() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 240px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="sale-search"
@@ -154,22 +154,23 @@ export default function SalesPage() {
           />
         </div>
         
-        <select 
-          className="form-input" 
-          value={customerFilter} 
-          onChange={e => setCustomerFilter(e.target.value)}
-          style={{ width: 'auto', flex: '0 1 auto' }}
-        >
-          <option value="">All Customers</option>
-          {customers.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        
-        <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 auto' }}>
-          <option value="all">All Time</option>
-          {/* Future implementation */}
-        </select>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: '1 1 auto' }}>
+          <select 
+            className="form-input" 
+            value={customerFilter} 
+            onChange={e => setCustomerFilter(e.target.value)}
+            style={{ width: 'auto', flex: '1 1 140px', minWidth: '130px' }}
+          >
+            <option value="">All Customers</option>
+            {customers.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          
+          <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 110px' }}>
+            <option value="all">All Time</option>
+          </select>
+        </div>
       </FilterBar>
 
       {/* Error */}
@@ -185,7 +186,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && sales.length === 0 && (
         <EmptyState
           icon={<ListTree size={48} />}
@@ -207,7 +208,8 @@ export default function SalesPage() {
 
       {!loading && !error && sales.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -262,6 +264,51 @@ export default function SalesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {sales.map((s) => (
+              <div 
+                key={s.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/sales/${s.id}`)}
+                style={{ opacity: s.is_active ? 1 : 0.6 }}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">{s.customer_name}</div>
+                  <span className={`badge ${
+                    !s.is_active ? 'badge-voided' :
+                    s.receivable_status === 'PAID' ? 'badge-paid' :
+                    s.receivable_status === 'PARTIALLY_PAID' ? 'badge-partial' :
+                    'badge-pending'
+                  }`}>
+                    {!s.is_active ? 'VOIDED' : (s.receivable_status?.replace('_', ' ') || 'RECORDED')}
+                  </span>
+                </div>
+                
+                <div className="mobile-card-row">
+                  <span className="mobile-card-subtitle">
+                    {new Date(s.sale_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  <div className="mobile-card-amount">{formatCurrency(s.total_amount)}</div>
+                </div>
+
+                <div className="mobile-card-meta">
+                  <span className="mobile-card-meta-item" style={{ color: 'var(--color-success)', fontWeight: 600 }}>
+                    {Number(s.quantity_tons).toLocaleString()} MT
+                  </span>
+                  <span className="mobile-card-meta-item">
+                    @ {formatCurrency(s.rate_per_ton)}/MT
+                  </span>
+                  {s.truck_no && (
+                    <span className="mobile-card-meta-item">
+                      Truck: {s.truck_no}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}

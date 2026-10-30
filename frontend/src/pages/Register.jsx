@@ -59,8 +59,8 @@ export default function Register() {
   };
 
   return (
-    <div className="page-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: 'var(--space-4)' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '500px', padding: 'var(--space-6)' }}>
+    <div className="auth-page-container">
+      <div className="card auth-card" style={{ maxWidth: '480px' }}>
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: 'var(--space-2)', color: 'var(--color-primary)' }}>
             COAL INVOICE

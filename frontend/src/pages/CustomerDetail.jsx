@@ -640,13 +640,15 @@ function CustomerForm({ onSaved }) {
 
   return (
     <div className="page-content">
-      <div className="page-header">
-        <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => navigate('/customers')}>
-          <ArrowLeft size={16} /> Back
-        </button>
-        <div>
-          <h1 className="page-title">Add Customer</h1>
-          <p className="page-subtitle">Create a new customer record</p>
+      <div className="page-header" style={{ alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button className="btn btn-secondary btn-sm" style={{ padding: '0 10px', height: '36px', minHeight: '36px', flexShrink: 0 }} onClick={() => navigate('/customers')}>
+            <ArrowLeft size={16} />
+          </button>
+          <div>
+            <h1 className="page-title">Add Customer</h1>
+            <p className="page-subtitle">Create a new customer record</p>
+          </div>
         </div>
       </div>
 
@@ -973,22 +975,24 @@ function CustomerDetail({ id }) {
   return (
     <div className="page-content">
       {/* Header */}
-      <div className="page-header">
-        <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => navigate('/customers')}>
-          <ArrowLeft size={16} /> Back
-        </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-            <h1 className="page-title">{customer.name}</h1>
-            <StatusBadge isActive={customer.is_active} />
+      <div className="page-header" style={{ alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+          <button className="btn btn-secondary btn-sm" style={{ padding: '0 10px', height: '36px', minHeight: '36px', flexShrink: 0, marginTop: '2px' }} onClick={() => navigate('/customers')}>
+            <ArrowLeft size={16} />
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <h1 className="page-title">{customer.name}</h1>
+              <StatusBadge isActive={customer.is_active} />
+            </div>
+            <p className="page-subtitle">
+              Customer since {new Date(customer.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
           </div>
-          <p className="page-subtitle">
-            Customer since {new Date(customer.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
         </div>
         {!editing && (
-          <button className="btn btn-secondary" id="edit-customer-btn" onClick={() => { setEditing(true); setAlert(null); }} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <Edit2 size={16} /> Edit
+          <button className="btn btn-secondary btn-sm" id="edit-customer-btn" onClick={() => { setEditing(true); setAlert(null); }} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', height: '36px', minHeight: '36px', flexShrink: 0 }}>
+            <Edit2 size={15} /> Edit
           </button>
         )}
       </div>

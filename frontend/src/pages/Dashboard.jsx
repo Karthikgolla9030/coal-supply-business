@@ -134,56 +134,56 @@ export default function Dashboard() {
           <div className="card-grid">
             
             {/* Purchases */}
-            <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <ShoppingCart size={20} color="var(--color-primary)" />
+            <div className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <ShoppingCart size={18} color="var(--color-primary)" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Purchases</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1 }}>{formatCurrency(data.financials.purchase_cost)}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-primary)' }}>{Number(data.quantities.purchased).toLocaleString()} MT Purchased</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Purchases</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatCurrency(data.financials.purchase_cost)}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{Number(data.quantities.purchased).toLocaleString()} MT Purchased</div>
               </div>
             </div>
 
             {/* Sales */}
-            <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-success-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <TrendingUp size={20} color="var(--color-success)" />
+            <div className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-success-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TrendingUp size={18} color="var(--color-success)" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Sales</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1 }}>{formatCurrency(data.financials.sales_value)}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-success)' }}>{Number(data.quantities.sold).toLocaleString()} MT Sold</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Sales</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatCurrency(data.financials.sales_value)}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-success)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{Number(data.quantities.sold).toLocaleString()} MT Sold</div>
               </div>
             </div>
 
             {/* Expenses */}
-            <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Wallet size={20} color="var(--color-danger)" />
+            <div className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-danger-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Wallet size={18} color="var(--color-danger)" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Expenses</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Expenses</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {formatCurrency(data.financials.operating_expenses)}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-danger)' }}>Operating Costs</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-danger)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Operating Costs</div>
               </div>
             </div>
 
             {/* Net Profit */}
-            <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--color-warning-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-warning-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Net Profit</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estimated Net Profit</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {formatCurrency(data.financials.net_profit)}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-warning)' }}>Margin: {data.financials.net_margin}%</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-warning)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Margin: {data.financials.net_margin}%</div>
               </div>
             </div>
           </div>

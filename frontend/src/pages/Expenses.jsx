@@ -162,7 +162,7 @@ export default function Expenses() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 240px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="expense-search"
@@ -178,7 +178,7 @@ export default function Expenses() {
           className="form-input" 
           value={categoryFilter} 
           onChange={e => setCategoryFilter(e.target.value)}
-          style={{ width: 'auto', flex: '0 1 auto' }}
+          style={{ width: 'auto', flex: '1 1 140px', minWidth: '130px' }}
         >
           <option value="ALL">All Categories</option>
           {EXPENSE_CATEGORIES.map(c => (
@@ -200,7 +200,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && expenses.length === 0 && (
         <EmptyState
           icon={<Receipt size={48} />}
@@ -216,7 +216,8 @@ export default function Expenses() {
 
       {!loading && !error && expenses.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -266,6 +267,45 @@ export default function Expenses() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {expenses.map((exp) => (
+              <div 
+                key={exp.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/expenses/${exp.id}`)}
+                style={{ opacity: exp.is_active ? 1 : 0.6 }}
+              >
+                <div className="mobile-card-header">
+                  <span style={{
+                    display: 'inline-block', padding: '0.125rem 0.375rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600,
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)', color: 'var(--color-text-muted)'
+                  }}>
+                    {exp.category}
+                  </span>
+                  <div className="mobile-card-amount" style={{ color: 'var(--color-danger)' }}>
+                    {formatCurrency(exp.amount)}
+                  </div>
+                </div>
+
+                <div className="mobile-card-row">
+                  <span style={{ fontWeight: 500, fontSize: '14px' }}>{exp.description}</span>
+                  <span className="mobile-card-subtitle">
+                    {new Date(exp.expense_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+
+                <div className="mobile-card-meta">
+                  {exp.paid_to && <span>Paid to: {exp.paid_to}</span>}
+                  {exp.reference_no && <span>Ref: {exp.reference_no}</span>}
+                  <span className={`badge ${!exp.is_active ? 'badge-voided' : 'badge-success'}`} style={{ marginLeft: 'auto' }}>
+                    {!exp.is_active ? 'VOIDED' : 'RECORDED'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}

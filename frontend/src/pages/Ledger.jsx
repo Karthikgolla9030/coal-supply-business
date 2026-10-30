@@ -239,40 +239,68 @@ export default function Ledger() {
                 )}
               </div>
             ) : (
-              <div className="table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <table className="table" style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                  <thead>
-                    {activeTab === 'Paid' ? (
-                      <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>DATE</th>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>RECEIVED / PAID</th>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>CUSTOMER / PARTY</th>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>REFERENCE</th>
-                        <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>AMOUNT</th>
-                      </tr>
-                    ) : (
-                      <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>
-                          {activeTab === 'To Receive' ? 'CUSTOMER' : 'SUPPLIER / TRANSPORTER / PAYEE'}
-                        </th>
-                        <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>REFERENCE</th>
-                        <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>TOTAL AMOUNT</th>
-                        <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>PAID</th>
-                        <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '600', color: 'var(--color-text)' }}>
-                          {activeTab === 'To Receive' ? 'STILL TO RECEIVE' : 'STILL TO PAY'}
-                        </th>
-                        <th style={{ textAlign: 'center', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>STATUS</th>
-                      </tr>
-                    )}
-                  </thead>
-                  <tbody>
-                    {filteredEntries.map(entry => {
-                      const origAmt = parseFloat(entry.amount);
-                      const paidAmt = parseFloat(entry.paid_amount || entry.amount - entry.remaining_amount || 0);
-                      const remAmt = parseFloat(entry.remaining_amount || origAmt - paidAmt);
-                      const partyName = entry.party_name || entry.customer_name || "Unknown Party";
-                      
-                      if (activeTab === 'Paid') {
+              <>
+                <div className="desktop-only table-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <table className="table" style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      {activeTab === 'Paid' ? (
+                        <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>DATE</th>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>RECEIVED / PAID</th>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>CUSTOMER / PARTY</th>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>REFERENCE</th>
+                          <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>AMOUNT</th>
+                        </tr>
+                      ) : (
+                        <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>
+                            {activeTab === 'To Receive' ? 'CUSTOMER' : 'SUPPLIER / TRANSPORTER / PAYEE'}
+                          </th>
+                          <th style={{ textAlign: 'left', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>REFERENCE</th>
+                          <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>TOTAL AMOUNT</th>
+                          <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>PAID</th>
+                          <th style={{ textAlign: 'right', padding: '1rem 1.5rem', fontWeight: '600', color: 'var(--color-text)' }}>
+                            {activeTab === 'To Receive' ? 'STILL TO RECEIVE' : 'STILL TO PAY'}
+                          </th>
+                          <th style={{ textAlign: 'center', padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>STATUS</th>
+                        </tr>
+                      )}
+                    </thead>
+                    <tbody>
+                      {filteredEntries.map(entry => {
+                        const origAmt = parseFloat(entry.amount);
+                        const paidAmt = parseFloat(entry.paid_amount || entry.amount - entry.remaining_amount || 0);
+                        const remAmt = parseFloat(entry.remaining_amount || origAmt - paidAmt);
+                        const partyName = entry.party_name || entry.customer_name || "Unknown Party";
+                        
+                        if (activeTab === 'Paid') {
+                          return (
+                            <tr 
+                              key={entry.id} 
+                              style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background-color 0.15s' }}
+                              onClick={() => setSelectedEntryDetails(entry)}
+                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
+                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text)' }}>
+                                {entry.date || entry.created_at?.split('T')[0] || '—'}
+                              </td>
+                              <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text)' }}>
+                                {entry.transaction_type === 'RECEIVABLE' ? 'Received' : 'Paid'}
+                              </td>
+                              <td style={{ padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text)' }}>
+                                {partyName}
+                              </td>
+                              <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text-muted)' }}>
+                                {entry.reference || '—'}
+                              </td>
+                              <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: 'var(--color-text)' }}>
+                                ₹{origAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </td>
+                            </tr>
+                          );
+                        }
+
                         return (
                           <tr 
                             key={entry.id} 
@@ -281,59 +309,67 @@ export default function Ledger() {
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
-                            <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text)' }}>
-                              {entry.date || entry.created_at?.split('T')[0] || '—'}
-                            </td>
-                            <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text)' }}>
-                              {entry.transaction_type === 'RECEIVABLE' ? 'Received' : 'Paid'}
-                            </td>
                             <td style={{ padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text)' }}>
                               {partyName}
                             </td>
                             <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text-muted)' }}>
                               {entry.reference || '—'}
                             </td>
-                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: 'var(--color-text)' }}>
+                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--color-text)' }}>
                               ₹{origAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </td>
+                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--color-text-muted)' }}>
+                              ₹{paidAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: remAmt > 0 ? (entry.transaction_type === 'RECEIVABLE' ? 'var(--color-primary-light)' : 'var(--color-warning)') : 'var(--color-text)' }}>
+                              ₹{remAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                              <span className={`badge ${getStatusBadgeClass(entry.status)}`}>
+                                {statusDisplay[entry.status] || entry.status}
+                              </span>
+                            </td>
                           </tr>
-                        );
-                      }
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                      return (
-                        <tr 
-                          key={entry.id} 
-                          style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background-color 0.15s' }}
-                          onClick={() => setSelectedEntryDetails(entry)}
-                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
-                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <td style={{ padding: '1rem 1.5rem', fontWeight: '500', color: 'var(--color-text)' }}>
-                            {partyName}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', color: 'var(--color-text-muted)' }}>
-                            {entry.reference || '—'}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--color-text)' }}>
-                            ₹{origAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--color-text-muted)' }}>
-                            ₹{paidAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: '600', color: remAmt > 0 ? (entry.transaction_type === 'RECEIVABLE' ? 'var(--color-primary-light)' : 'var(--color-warning)') : 'var(--color-text)' }}>
-                            ₹{remAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                            <span className={`badge ${getStatusBadgeClass(entry.status)}`}>
-                              {statusDisplay[entry.status] || entry.status}
+                {/* Mobile Card View */}
+                <div className="mobile-card-list" style={{ padding: '10px' }}>
+                  {filteredEntries.map(entry => {
+                    const origAmt = parseFloat(entry.amount);
+                    const remAmt = parseFloat(entry.remaining_amount || 0);
+                    const partyName = entry.party_name || entry.customer_name || "Unknown Party";
+                    return (
+                      <div 
+                        key={entry.id} 
+                        className="mobile-card-item"
+                        onClick={() => setSelectedEntryDetails(entry)}
+                      >
+                        <div className="mobile-card-header">
+                          <div className="mobile-card-title">{partyName}</div>
+                          <span className={`badge ${getStatusBadgeClass(entry.status)}`}>
+                            {statusDisplay[entry.status] || entry.status}
+                          </span>
+                        </div>
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-subtitle">{entry.reference || entry.date || '—'}</span>
+                          <div className="mobile-card-amount">₹{origAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                        {remAmt > 0 && (
+                          <div className="mobile-card-meta">
+                            <span style={{ color: entry.transaction_type === 'RECEIVABLE' ? 'var(--color-primary)' : 'var(--color-warning)', fontWeight: 600 }}>
+                              Remaining: ₹{remAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </div>

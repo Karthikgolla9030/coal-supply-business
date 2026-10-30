@@ -1,9 +1,11 @@
 import React from 'react';
 import { Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function MobileHeader({ onToggleMenu }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="mobile-header">
@@ -16,7 +18,7 @@ export default function MobileHeader({ onToggleMenu }) {
         <Menu size={22} />
       </button>
 
-      <div className="mobile-header-brand">
+      <div className="mobile-header-brand" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
         <div className="mobile-header-logo-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2l9 4.9V17L12 22l-9-4.9V7z"/>
@@ -32,7 +34,12 @@ export default function MobileHeader({ onToggleMenu }) {
 
       <div className="mobile-header-user">
         {user ? (
-          <div className="mobile-user-avatar" title={user.username || 'User'}>
+          <div 
+            className="mobile-user-avatar" 
+            title={user.username || 'User Profile'}
+            onClick={() => navigate('/business-profile')}
+            style={{ cursor: 'pointer' }}
+          >
             {user.first_name ? user.first_name[0].toUpperCase() : (user.username ? user.username[0].toUpperCase() : 'U')}
           </div>
         ) : (

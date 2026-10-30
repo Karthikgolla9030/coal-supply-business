@@ -238,7 +238,8 @@ export default function InvoiceList() {
         />
       ) : (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -288,6 +289,58 @@ export default function InvoiceList() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {invoices.map((inv) => (
+              <div 
+                key={inv.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/invoices/${inv.id}`)}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title" style={{ fontFamily: 'monospace', color: 'var(--color-primary)' }}>
+                    {inv.invoice_number}
+                  </div>
+                  <span className={inv.transaction_type === 'CASH' ? 'badge badge-success' : 'badge badge-warning'}>
+                    {inv.transaction_type}
+                  </span>
+                </div>
+                
+                <div className="mobile-card-row">
+                  <span style={{ fontWeight: 500, fontSize: '14px' }}>{inv.customer?.name || 'Unknown Customer'}</span>
+                  <div className="mobile-card-amount">{formatAmount(inv.total_amount)}</div>
+                </div>
+
+                <div className="mobile-card-meta">
+                  <span>{new Date(inv.invoice_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                  {inv.vehicle_number && <span>Vehicle: {inv.vehicle_number}</span>}
+                  {inv.google_drive_status === 'UPLOADED' && (
+                    <span style={{ color: 'var(--color-success)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <CheckCircle2 size={12} /> Drive
+                    </span>
+                  )}
+                </div>
+
+                <div className="mobile-card-actions" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    style={{ flex: 1 }}
+                    onClick={() => navigate(`/invoices/${inv.id}`)}
+                  >
+                    <Eye size={14} /> View
+                  </button>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    style={{ flex: 1 }}
+                    onClick={() => handleDownloadPdf(inv.id, inv.invoice_number)}
+                  >
+                    <Download size={14} /> PDF
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="pagination">

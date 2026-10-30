@@ -41,8 +41,8 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="page-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: 'var(--space-4)' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '420px', padding: 'var(--space-6)' }}>
+    <div className="auth-page-container">
+      <div className="card auth-card" style={{ maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: 'var(--space-2)', color: 'var(--color-primary)' }}>
             RESET PASSWORD

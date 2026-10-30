@@ -1185,6 +1185,31 @@ tbody tr:hover {
   filter: drop-shadow(0 0 8px var(--color-primary-soft));
 }
 
+/* ── Auth Pages Container ─────────────────────────────────────── */
+.auth-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 16px 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-6);
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 20px 16px;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
@@ -1247,6 +1272,125 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
+/* ── Desktop & Mobile Display Helpers ─────────────────────────── */
+.desktop-only {
+  display: block;
+}
+.mobile-only {
+  display: none !important;
+}
+
+/* ── Mobile Card List Component ───────────────────────────────── */
+.mobile-card-list {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.mobile-card-item {
+  background: var(--color-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mobile-card-item:hover,
+.mobile-card-item:active {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-light);
+}
+
+.mobile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-card-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.mobile-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.mobile-card-badge {
+  font-size: 11px;
+  font-family: monospace;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+}
+
+.mobile-card-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.mobile-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+.mobile-card-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mobile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 /* ── Global Responsive System ─────────────────────────────────── */
 
 /* ── Tablet & Mobile (<= 1024px) ───────────────────────────────── */
@@ -1277,7 +1421,8 @@ input[type='number'] {
     display: flex !important;
     align-items: center;
     justify-content: space-between;
-    height: 58px;
+    height: 56px;
+    min-height: 56px;
     padding: 0 var(--space-4);
     background: rgba(11, 14, 17, 0.98);
     backdrop-filter: blur(16px);
@@ -1311,15 +1456,15 @@ input[type='number'] {
     top: 0 !important;
     left: 0 !important;
     bottom: 0 !important;
-    width: 290px !important;
-    max-width: 85vw !important;
+    width: 280px !important;
+    max-width: 82vw !important;
     height: 100vh !important;
     height: 100dvh !important;
     transform: translateX(-100%) !important;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    z-index: 1050 !important; /* CRITICAL: Higher than backdrop (1040) */
+    z-index: 1050 !important;
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.8) !important;
-    background: #0E1216 !important; /* SOLID, NEVER TRANSPARENT */
+    background: #0E1216 !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
@@ -1334,10 +1479,10 @@ input[type='number'] {
     display: flex !important;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
@@ -1362,108 +1507,178 @@ input[type='number'] {
 /* ── Mobile Viewports (<= 768px) ───────────────────────────────── */
 @media (max-width: 768px) {
   :root {
-    --page-padding-y: var(--space-4);
-    --page-padding-x: var(--space-4);
-    --section-gap: var(--space-5);
+    --page-padding-y: 16px;
+    --page-padding-x: 14px;
+    --section-gap: 16px;
+    --card-gap: 12px;
+    --component-gap: 10px;
+    --radius-card: 11px;
+    --font-size-sm: 0.84rem;
+    --font-size-xs: 0.78rem;
   }
 
-  /* 1. Prevent iOS Auto-Zoom on inputs & touch target sizing */
+  /* Display Toggles */
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
+  }
+  .mobile-card-list {
+    display: flex !important;
+  }
+
+  /* 1. Touch targets & preventing iOS Auto-Zoom */
   input, select, textarea,
   .form-input, .form-control, .form-textarea {
     font-size: 16px !important;
+    min-height: 44px;
+    height: 44px;
+    border-radius: 9px;
   }
 
-  /* 2. Responsive Page Header */
+  .form-textarea {
+    min-height: 80px;
+    height: auto;
+  }
+
+  /* 2. Responsive Page Header — Compact & Uncluttered */
   .page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
     width: 100%;
   }
 
   .page-header-content {
-    width: 100%;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
   .page-header-action {
-    width: 100%;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .page-header-action > * {
-    width: 100%;
+    width: auto;
   }
 
   .page-header-action select {
-    width: 100% !important;
-    min-height: 44px;
+    width: auto !important;
+    min-width: 120px;
+    min-height: 40px;
+    height: 40px;
+    font-size: 13px !important;
   }
 
   .page-header-action .btn {
-    width: 100%;
-    min-height: 44px;
+    width: auto;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 14px;
+    font-size: 13px;
+    border-radius: 9px;
   }
 
-  /* 3. Typography & Clean Word-Wrapping */
+  /* 3. Typography & Clean Hierarchy */
   .page-title {
-    font-size: 1.45rem;
+    font-size: 22px;
     font-weight: 700;
     line-height: 1.25;
     letter-spacing: -0.01em;
     word-break: normal;
     overflow-wrap: break-word;
-    hyphens: none;
   }
 
   .page-subtitle {
-    font-size: 0.85rem;
-    line-height: 1.45;
-    margin-top: var(--space-1);
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 2px;
     color: var(--color-text-muted);
   }
 
   .section-title {
-    font-size: 1.15rem;
+    font-size: 16px;
+    font-weight: 600;
     line-height: 1.3;
-    word-break: normal;
-    overflow-wrap: break-word;
+    margin-bottom: 10px;
   }
 
-  /* 4. Responsive Card Grid */
+  /* 4. Responsive Card Grids — 2 columns on mobile for metrics */
   .card-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-grid .card {
+    margin-bottom: 0;
+    padding: 12px 14px;
   }
   
   .card {
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
+    padding: 13px 14px;
+    margin-bottom: 12px;
     width: 100%;
+    border-radius: 11px;
     box-sizing: border-box;
   }
 
-  /* 5. Detail Rows */
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  /* 5. Buttons */
+  .btn {
+    min-height: 44px;
+    height: 44px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    padding: 0 16px;
+  }
+
+  .btn-sm {
+    min-height: 38px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    padding: 0 12px;
+  }
+
+  /* 6. Detail Rows */
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-1);
-    padding: var(--space-3) 0;
+    gap: 3px;
+    padding: 8px 0;
   }
 
   .detail-label {
     min-width: 0;
     width: 100%;
-    font-size: 0.7rem;
+    font-size: 11px;
+    color: #9CA3AF;
   }
 
   .detail-value {
     width: 100%;
+    font-size: 13.5px;
     word-break: break-word;
   }
 
-  /* 6. Modals on Mobile Viewports */
+  /* 7. Modals on Mobile Viewports */
   .modal-backdrop {
     padding: var(--space-2);
     z-index: 1100;
@@ -1474,27 +1689,27 @@ input[type='number'] {
     width: 100%;
     max-height: calc(100vh - 16px);
     max-height: calc(100dvh - 16px);
-    border-radius: var(--radius-lg);
+    border-radius: 14px;
     display: flex;
     flex-direction: column;
   }
 
   .modal-header {
-    padding: var(--space-4);
+    padding: 14px 16px;
     flex-shrink: 0;
   }
 
   .modal-body {
-    padding: var(--space-4);
+    padding: 14px 16px;
     overflow-y: auto;
     flex: 1;
     -webkit-overflow-scrolling: touch;
   }
 
   .modal-footer {
-    padding: var(--space-4);
+    padding: 12px 16px;
     flex-direction: column-reverse;
-    gap: var(--space-2);
+    gap: 8px;
     flex-shrink: 0;
   }
 
@@ -1502,11 +1717,14 @@ input[type='number'] {
     width: 100%;
   }
 
-  /* 7. Toolbars & Action Bars */
+  /* 8. Toolbars & Filters — Clean Vertical Rhythm */
   .toolbar {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: var(--space-3);
+    gap: 10px;
+    margin-bottom: 12px;
+    width: 100%;
   }
 
   .toolbar > * {
@@ -1517,43 +1735,43 @@ input[type='number'] {
   .search-bar {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
   }
 
-  .btn-sm {
-    min-height: 40px;
-    height: 40px;
-  }
-
-  /* 8. Empty States on Mobile */
+  /* 9. Empty States on Mobile */
   .empty-state {
-    padding: var(--space-8) var(--space-3);
+    padding: 28px 14px;
   }
 
   .empty-state-title {
-    font-size: 1.05rem;
+    font-size: 16px;
     word-break: normal;
   }
 
   .empty-state-message {
     max-width: 100%;
-    font-size: 0.85rem;
+    font-size: 13px;
   }
 }
 
 /* ── Extra-Small Screens (<= 380px) ────────────────────────────── */
 @media (max-width: 380px) {
   :root {
-    --page-padding-y: var(--space-3);
-    --page-padding-x: var(--space-3);
-    --section-gap: var(--space-4);
+    --page-padding-y: 12px;
+    --page-padding-x: 10px;
+    --section-gap: 12px;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
   }
 
   .page-title {
-    font-size: 1.25rem;
+    font-size: 20px;
   }
 
   .mobile-header-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
   }
 }
 
@@ -1564,7 +1782,7 @@ input[type='number'] {
   -webkit-overflow-scrolling: touch;
   white-space: nowrap;
   gap: var(--space-2);
-  padding-bottom: var(--space-2);
+  padding-bottom: 4px;
   max-width: 100%;
   scrollbar-width: none;
 }
@@ -1579,4 +1797,5 @@ input[type='number'] {
   word-break: break-word;
   overflow-wrap: break-word;
 }
+
 

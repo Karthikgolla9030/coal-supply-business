@@ -74,7 +74,7 @@ export default function CustomersPage() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 280px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="customer-search"
@@ -86,13 +86,14 @@ export default function CustomersPage() {
           />
         </div>
         
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }}>
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
+            style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary)' }}
           />
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Show inactive</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Show inactive</span>
         </label>
       </FilterBar>
 
@@ -109,7 +110,7 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && customers.length === 0 && (
         <EmptyState
           icon={<Users size={48} />}
@@ -131,7 +132,8 @@ export default function CustomersPage() {
 
       {!loading && !error && customers.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -160,6 +162,44 @@ export default function CustomersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {customers.map((c) => (
+              <div 
+                key={c.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/customers/${c.id}`)}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">{c.name}</div>
+                  <StatusBadge isActive={c.is_active} />
+                </div>
+                
+                <div className="mobile-card-row">
+                  <div className="mobile-card-badge">
+                    {c.gst_registered ? (c.gstin || 'GST Registered') : (c.aadhaar_no ? `Aadhaar: ${c.aadhaar_no}` : 'Unregistered')}
+                  </div>
+                  {c.state && (
+                    <span className="mobile-card-subtitle">{c.state}</span>
+                  )}
+                </div>
+
+                {c.phone && (
+                  <div className="mobile-card-meta">
+                    <a 
+                      href={`tel:${c.phone}`} 
+                      onClick={(e) => e.stopPropagation()} 
+                      className="mobile-card-meta-item"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      <Phone size={13} /> {c.phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}

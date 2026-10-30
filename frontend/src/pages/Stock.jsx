@@ -143,7 +143,7 @@ export default function StockPage() {
       <h2 className="section-title">STOCK MOVEMENT</h2>
 
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 240px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="stock-search"
@@ -155,20 +155,22 @@ export default function StockPage() {
           />
         </div>
         
-        <select 
-          className="form-input" 
-          value={typeFilter} 
-          onChange={e => setTypeFilter(e.target.value)}
-          style={{ width: 'auto', flex: '0 1 auto' }}
-        >
-          <option value="ALL">All Movements</option>
-          <option value="PURCHASE">Purchases Only</option>
-          <option value="SALE">Sales Only</option>
-        </select>
-        
-        <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 auto' }}>
-          <option value="all">All Time</option>
-        </select>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: '1 1 auto' }}>
+          <select 
+            className="form-input" 
+            value={typeFilter} 
+            onChange={e => setTypeFilter(e.target.value)}
+            style={{ width: 'auto', flex: '1 1 140px', minWidth: '130px' }}
+          >
+            <option value="ALL">All Movements</option>
+            <option value="PURCHASE">Purchases Only</option>
+            <option value="SALE">Sales Only</option>
+          </select>
+          
+          <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 110px' }}>
+            <option value="all">All Time</option>
+          </select>
+        </div>
       </FilterBar>
 
       {/* Error */}
@@ -184,7 +186,7 @@ export default function StockPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && movements.length === 0 && (
         <EmptyState
           icon={<Package size={48} />}
@@ -199,7 +201,8 @@ export default function StockPage() {
 
       {!loading && !error && movements.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -250,6 +253,47 @@ export default function StockPage() {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {movements.map((m) => {
+              const isPurchase = m.type === 'PURCHASE';
+              const qty = Number(m.quantity);
+              const displayQty = qty > 0 ? `+${qty.toLocaleString()} MT` : `${qty.toLocaleString()} MT`;
+              const qtyColor = isPurchase ? 'var(--color-success)' : 'var(--color-danger)';
+              return (
+                <div 
+                  key={`${m.type}-${m.id}`} 
+                  className="mobile-card-item" 
+                  onClick={() => navigate(`/${isPurchase ? 'purchases' : 'sales'}/${m.id}`)}
+                  style={{ opacity: m.is_active ? 1 : 0.6 }}
+                >
+                  <div className="mobile-card-header">
+                    <span style={{
+                      display: 'inline-block', padding: '0.125rem 0.375rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600,
+                      backgroundColor: isPurchase ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: qtyColor
+                    }}>
+                      {m.type}
+                    </span>
+                    <span style={{ fontWeight: 600, color: qtyColor, fontSize: '14px' }}>{displayQty}</span>
+                  </div>
+                  
+                  <div className="mobile-card-row">
+                    <span style={{ fontWeight: 500, fontSize: '14px' }}>{m.party_name || '—'}</span>
+                    <span className="mobile-card-subtitle">
+                      {new Date(m.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+
+                  <div className="mobile-card-meta">
+                    <span>Balance: <strong>{Number(m.balance).toLocaleString()} MT</strong></span>
+                    {m.truck_no && <span>Truck: {m.truck_no}</span>}
+                    {m.order_no && <span>Order: {m.order_no}</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Pagination */}

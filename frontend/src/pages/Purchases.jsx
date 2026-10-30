@@ -137,7 +137,7 @@ export default function PurchasesPage() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 300px' }}>
+        <div className="search-bar" style={{ flex: '1 1 240px', maxWidth: '360px' }}>
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="purchase-search"
@@ -149,21 +149,23 @@ export default function PurchasesPage() {
           />
         </div>
         
-        <select 
-          className="form-input" 
-          value={supplierFilter} 
-          onChange={e => setSupplierFilter(e.target.value)}
-          style={{ width: 'auto', flex: '0 1 auto' }}
-        >
-          <option value="">All Suppliers</option>
-          {suppliers.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
-        
-        <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 auto' }}>
-          <option value="all">All Time</option>
-        </select>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: '1 1 auto' }}>
+          <select 
+            className="form-input" 
+            value={supplierFilter} 
+            onChange={e => setSupplierFilter(e.target.value)}
+            style={{ width: 'auto', flex: '1 1 140px', minWidth: '130px' }}
+          >
+            <option value="">All Suppliers</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          
+          <select className="form-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={{ width: 'auto', flex: '0 1 110px' }}>
+            <option value="all">All Time</option>
+          </select>
+        </div>
       </FilterBar>
 
       {/* Error */}
@@ -179,7 +181,7 @@ export default function PurchasesPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Table & Cards */}
       {!loading && !error && purchases.length === 0 && (
         <EmptyState
           icon={<ShoppingCart size={48} />}
@@ -201,7 +203,8 @@ export default function PurchasesPage() {
 
       {!loading && !error && purchases.length > 0 && (
         <>
-          <div className="table-wrapper">
+          {/* Desktop Table View */}
+          <div className="desktop-only table-wrapper">
             <table>
               <thead>
                 <tr>
@@ -244,6 +247,46 @@ export default function PurchasesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {purchases.map((p) => (
+              <div 
+                key={p.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/purchases/${p.id}`)}
+                style={{ opacity: p.is_active ? 1 : 0.6 }}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">{p.supplier_name}</div>
+                  <span className={`badge ${!p.is_active ? 'badge-voided' : 'badge-success'}`}>
+                    {!p.is_active ? 'VOIDED' : 'RECORDED'}
+                  </span>
+                </div>
+                
+                <div className="mobile-card-row">
+                  <span className="mobile-card-subtitle">
+                    {new Date(p.purchase_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  <div className="mobile-card-amount">{formatCurrency(p.total_amount)}</div>
+                </div>
+
+                <div className="mobile-card-meta">
+                  <span className="mobile-card-meta-item" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+                    {Number(p.quantity_tons).toLocaleString()} MT
+                  </span>
+                  <span className="mobile-card-meta-item">
+                    @ {formatCurrency(p.rate_per_ton)}/MT
+                  </span>
+                  {p.truck_no && (
+                    <span className="mobile-card-meta-item">
+                      Truck: {p.truck_no}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Pagination */}
