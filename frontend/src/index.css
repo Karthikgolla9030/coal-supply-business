@@ -426,19 +426,6 @@ input[type="number"]::-webkit-outer-spin-button {
   align-items: center;
 }
 
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .page-header-action {
-    width: 100%;
-  }
-  .page-header-action .btn {
-    width: 100%;
-  }
-}
-
 .page-title {
   font-size: 30px;
   font-weight: 700;
@@ -483,19 +470,6 @@ input[type="number"]::-webkit-outer-spin-button {
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-  .section-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .section-header-action {
-    width: 100%;
-  }
-  .section-header-action .btn {
-    flex: 1 1 auto;
-  }
 }
 
 /* ── Card — flat glass look ─────────────────────────────────── */
@@ -955,20 +929,36 @@ tbody tr:hover {
 /* ── Search bar ─────────────────────────────────────────────── */
 .search-bar {
   position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
   max-width: 360px;
+  height: 44px;
 }
 
-.search-bar input {
-  padding-left: 2.5rem;
+.search-bar input,
+.search-bar .form-input {
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  padding-left: 42px !important;
+  padding-right: 14px;
+  box-sizing: border-box;
 }
 
 .search-bar-icon {
   position: absolute;
-  left: var(--space-3);
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   color: var(--color-text-muted);
   pointer-events: none;
+  z-index: 2;
 }
 
 /* ── Empty state ─────────────────────────────────────────────── */
@@ -1547,10 +1537,11 @@ input[type='number'] {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .page-header-content {
@@ -1560,15 +1551,15 @@ input[type='number'] {
 
   .page-header-action {
     flex: 0 0 auto;
+    width: auto !important;
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    margin: 0;
   }
 
   .page-header-action > * {
-    width: auto;
+    width: auto !important;
   }
 
   .page-header-action select {
@@ -1580,12 +1571,17 @@ input[type='number'] {
   }
 
   .page-header-action .btn {
-    width: auto;
+    width: auto !important;
     min-height: 40px;
     height: 40px;
     padding: 0 14px;
     font-size: 13px;
+    font-weight: 500;
     border-radius: 9px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
   /* 3. Typography & Clean Hierarchy */
@@ -1730,12 +1726,39 @@ input[type='number'] {
   .toolbar > * {
     width: 100% !important;
     max-width: 100% !important;
+    margin: 0 !important;
   }
 
-  .search-bar {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+  .search-bar, .toolbar .search-bar {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    flex: 0 0 44px !important; /* CRITICAL: prevents any column flex-basis expansion */
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .search-bar-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 2 !important;
+  }
+
+  .search-bar input,
+  .search-bar .form-input {
+    width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding-left: 42px !important;
+    padding-right: 14px !important;
+    box-sizing: border-box !important;
   }
 
   /* 9. Empty States on Mobile */

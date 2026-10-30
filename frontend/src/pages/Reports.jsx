@@ -54,7 +54,7 @@ export default function Reports() {
   return (
     <div className="page-content">
       <div className="page-header">
-        <div>
+        <div className="page-header-content">
           <h1 className="page-title">Reports</h1>
           <p className="page-subtitle">View and analyze detailed business activity.</p>
         </div>

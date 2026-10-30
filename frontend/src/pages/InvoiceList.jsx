@@ -136,13 +136,13 @@ export default function InvoiceList() {
         }
       />
 
-      <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-5)' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+      <div className="card" style={{ marginBottom: '14px', padding: '14px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
           
           {/* Search */}
-          <div style={{ flex: '1 1 250px' }}>
+          <div style={{ flex: '1 1 220px' }}>
             <label className="form-label">Search</label>
-            <div className="search-bar mt-2">
+            <div className="search-bar" style={{ marginTop: '4px' }}>
               <span className="search-bar-icon"><Search size={16} /></span>
               <input 
                 type="text" 
@@ -155,10 +155,11 @@ export default function InvoiceList() {
           </div>
 
           {/* Customer Filter */}
-          <div style={{ flex: '1 1 200px' }}>
+          <div style={{ flex: '1 1 180px' }}>
             <label className="form-label">Customer</label>
             <select 
-              className="form-input mt-2" 
+              className="form-input" 
+              style={{ marginTop: '4px' }}
               value={searchParams.get('customer') || ''}
               onChange={(e) => updateFilter('customer', e.target.value)}
             >
@@ -170,32 +171,35 @@ export default function InvoiceList() {
           </div>
 
           {/* Date From */}
-          <div style={{ flex: '1 1 150px' }}>
+          <div style={{ flex: '1 1 140px' }}>
             <label className="form-label">Date From</label>
             <input 
               type="date" 
-              className="form-input mt-2" 
+              className="form-input" 
+              style={{ marginTop: '4px' }}
               value={searchParams.get('date_from') || ''}
               onChange={(e) => updateFilter('date_from', e.target.value)}
             />
           </div>
 
           {/* Date To */}
-          <div style={{ flex: '1 1 150px' }}>
+          <div style={{ flex: '1 1 140px' }}>
             <label className="form-label">Date To</label>
             <input 
               type="date" 
-              className="form-input mt-2" 
+              className="form-input" 
+              style={{ marginTop: '4px' }}
               value={searchParams.get('date_to') || ''}
               onChange={(e) => updateFilter('date_to', e.target.value)}
             />
           </div>
 
           {/* Transaction Type */}
-          <div style={{ flex: '1 1 150px' }}>
+          <div style={{ flex: '1 1 140px' }}>
             <label className="form-label">Transaction Type</label>
             <select 
-              className="form-input mt-2"
+              className="form-input"
+              style={{ marginTop: '4px' }}
               value={searchParams.get('transaction_type') || ''}
               onChange={(e) => updateFilter('transaction_type', e.target.value)}
             >
@@ -206,11 +210,12 @@ export default function InvoiceList() {
           </div>
 
           {/* Clear Button */}
-          <div style={{ flex: '0 0 auto' }}>
+          <div style={{ flex: '0 0 auto', width: 'auto' }}>
             <button 
               className="btn btn-secondary" 
               onClick={handleClearFilters}
               disabled={!hasFilters && searchInput === ''}
+              style={{ height: '44px' }}
             >
               <FilterX size={16} /> Clear Filters
             </button>

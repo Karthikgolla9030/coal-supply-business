@@ -104,40 +104,72 @@ function SupplierPurchaseHistory({ supplierId }) {
           action={<button className="btn btn-primary" onClick={() => navigate('/purchases/new')}>Add Purchase</button>}
         />
       ) : (
-        <div className="table-wrapper">
-          <table style={{ fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: 'var(--color-bg-subtle)' }}>
-                <th>Date</th>
-                <th>Purchase No.</th>
-                <th>Truck</th>
-                <th style={{ textAlign: 'right' }}>Tons</th>
-                <th style={{ textAlign: 'right' }}>Amount</th>
-                <th style={{ textAlign: 'right' }}>GST</th>
-                <th style={{ textAlign: 'right' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {purchases.map(p => (
-                <tr key={p.id} onClick={() => navigate(`/purchases/${p.id}`)} style={{ cursor: 'pointer', opacity: p.is_active ? 1 : 0.6 }}>
-                  <td>{new Date(p.purchase_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                  <td>{p.purchase_order_no || '—'}</td>
-                  <td>{p.truck_no || '—'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 500 }}>{Number(p.quantity_tons).toLocaleString()} MT</td>
-                  <td style={{ textAlign: 'right', color: 'var(--color-text-muted)' }}>
-                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.purchase_amount)}
-                  </td>
-                  <td style={{ textAlign: 'right', color: 'var(--color-text-muted)' }}>
-                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.gst_amount)}
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-primary)' }}>
-                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.total_amount)}
-                  </td>
+        <>
+          <div className="desktop-only table-wrapper">
+            <table style={{ fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--color-bg-subtle)' }}>
+                  <th>Date</th>
+                  <th>Purchase No.</th>
+                  <th>Truck</th>
+                  <th style={{ textAlign: 'right' }}>Tons</th>
+                  <th style={{ textAlign: 'right' }}>Amount</th>
+                  <th style={{ textAlign: 'right' }}>GST</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {purchases.map(p => (
+                  <tr key={p.id} onClick={() => navigate(`/purchases/${p.id}`)} style={{ cursor: 'pointer', opacity: p.is_active ? 1 : 0.6 }}>
+                    <td>{new Date(p.purchase_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    <td>{p.purchase_order_no || '—'}</td>
+                    <td>{p.truck_no || '—'}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 500 }}>{Number(p.quantity_tons).toLocaleString()} MT</td>
+                    <td style={{ textAlign: 'right', color: 'var(--color-text-muted)' }}>
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.purchase_amount)}
+                    </td>
+                    <td style={{ textAlign: 'right', color: 'var(--color-text-muted)' }}>
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.gst_amount)}
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-primary)' }}>
+                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.total_amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-card-list">
+            {purchases.map(p => (
+              <div 
+                key={p.id} 
+                className="mobile-card-item"
+                onClick={() => navigate(`/purchases/${p.id}`)}
+                style={{ opacity: p.is_active ? 1 : 0.6 }}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">{p.purchase_order_no || `#${p.id}`}</div>
+                  <div className="mobile-card-amount">
+                    {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(p.total_amount)}
+                  </div>
+                </div>
+                <div className="mobile-card-row">
+                  <span className="mobile-card-subtitle">
+                    {new Date(p.purchase_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  {p.truck_no && <span className="mobile-card-badge">Truck: {p.truck_no}</span>}
+                </div>
+                <div className="mobile-card-meta">
+                  <div className="mobile-card-meta-item">
+                    <span>Quantity: <strong>{Number(p.quantity_tons).toLocaleString()} MT</strong></span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -185,8 +217,10 @@ function SupplierForm() {
       </button>
 
       <div className="page-header">
-        <h1 className="page-title">Add New Supplier</h1>
-        <p className="page-subtitle">Enter supplier details to save them to your business.</p>
+        <div className="page-header-content">
+          <h1 className="page-title">Add New Supplier</h1>
+          <p className="page-subtitle">Enter supplier details to save them to your business.</p>
+        </div>
       </div>
 
       {alert && <div className={`alert alert-${alert.type}`}>{alert.message}</div>}
@@ -334,15 +368,17 @@ function SupplierDetail({ id }) {
         <ArrowLeft size={16} /> Back to Suppliers
       </button>
 
-      <div className="page-header flex justify-between items-center" style={{ display: 'flex', alignItems: 'flex-start' }}>
-        <div>
+      <div className="page-header">
+        <div className="page-header-content">
           <h1 className="page-title">{supplier.name}</h1>
           <p className="page-subtitle">Supplier since {new Date(supplier.created_at).toLocaleDateString()}</p>
         </div>
         {!editing && (
-          <button className="btn btn-secondary" id="edit-supplier-btn" onClick={() => setEditing(true)}>
-            <Edit2 size={16} /> Edit
-          </button>
+          <div className="page-header-action">
+            <button className="btn btn-secondary" id="edit-supplier-btn" onClick={() => setEditing(true)}>
+              <Edit2 size={16} /> Edit
+            </button>
+          </div>
         )}
       </div>
 

@@ -320,56 +320,106 @@ function CustomerLedgerHistory({ customer, onRefresh }) {
       ) : entries.length === 0 ? (
         <EmptyState icon={<FileText size={48} />} title="No Ledger Entries" message={`This customer does not have any ${transactionType === 'RECEIVABLE' ? 'Money to Receive' : 'Money to Pay'} transactions yet.`} />
       ) : (
-        <div className="table-wrapper" style={{ border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
-          <table className="table" style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: 'var(--color-bg-subtle)', textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
-                <th style={{ padding: '0.75rem' }}>Date</th>
-                <th style={{ padding: '0.75rem' }}>Order No.</th>
-                <th style={{ padding: '0.75rem' }}>Serial No.</th>
-                <th style={{ padding: '0.75rem' }}>Truck No.</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Tons</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Amount</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Paid</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Remaining</th>
-                <th style={{ padding: '0.75rem' }}>Status</th>
-                <th style={{ padding: '0.75rem' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map(entry => (
-                <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <td style={{ padding: '0.75rem', whiteSpace: 'nowrap' }}>
-                    {new Date(entry.entry_date || entry.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>{entry.sale_order_no || entry.purchase_order_no || '—'}</td>
-                  <td style={{ padding: '0.75rem' }}>{entry.serial_no || '—'}</td>
-                  <td style={{ padding: '0.75rem' }}>{entry.truck_no || '—'}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right' }}>{entry.tons ? `${parseFloat(entry.tons).toFixed(2)}` : '—'}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right' }}>{formatAmount(entry.amount)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--color-success)' }}>{formatAmount(entry.paid_amount)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right', color: entry.remaining_amount > 0 ? 'var(--color-danger)' : 'var(--color-text)' }}>{formatAmount(entry.remaining_amount)}</td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <span style={{
-                      display: 'inline-block', padding: '0.125rem 0.375rem', borderRadius: '999px', fontSize: '0.65rem', fontWeight: 600,
-                      backgroundColor: entry.status === 'PAID' ? 'var(--color-success)' : entry.status === 'PARTIALLY_PAID' ? 'var(--color-warning)' : 'var(--color-danger)', color: 'white'
-                    }}>
-                      {entry.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.75rem' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => {
-                      setSelectedLedgerEntry(entry);
-                      setIsDetailsModalOpen(true);
-                    }}>
-                      View Details
-                    </button>
-                  </td>
+        <>
+          <div className="desktop-only table-wrapper" style={{ border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg-card)' }}>
+            <table className="table" style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--color-bg-subtle)', textAlign: 'left', borderBottom: '1px solid var(--color-border)' }}>
+                  <th style={{ padding: '0.75rem' }}>Date</th>
+                  <th style={{ padding: '0.75rem' }}>Order No.</th>
+                  <th style={{ padding: '0.75rem' }}>Serial No.</th>
+                  <th style={{ padding: '0.75rem' }}>Truck No.</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right' }}>Tons</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right' }}>Amount</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right' }}>Paid</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right' }}>Remaining</th>
+                  <th style={{ padding: '0.75rem' }}>Status</th>
+                  <th style={{ padding: '0.75rem' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {entries.map(entry => (
+                  <tr key={entry.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {new Date(entry.entry_date || entry.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })}
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>{entry.sale_order_no || entry.purchase_order_no || '—'}</td>
+                    <td style={{ padding: '0.75rem' }}>{entry.serial_no || '—'}</td>
+                    <td style={{ padding: '0.75rem' }}>{entry.truck_no || '—'}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right' }}>{entry.tons ? `${parseFloat(entry.tons).toFixed(2)}` : '—'}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right' }}>{formatAmount(entry.amount)}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--color-success)' }}>{formatAmount(entry.paid_amount)}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right', color: entry.remaining_amount > 0 ? 'var(--color-danger)' : 'var(--color-text)' }}>{formatAmount(entry.remaining_amount)}</td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '0.125rem 0.375rem', borderRadius: '999px', fontSize: '0.65rem', fontWeight: 600,
+                        backgroundColor: entry.status === 'PAID' ? 'var(--color-success)' : entry.status === 'PARTIALLY_PAID' ? 'var(--color-warning)' : 'var(--color-danger)', color: 'white'
+                      }}>
+                        {entry.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => {
+                        setSelectedLedgerEntry(entry);
+                        setIsDetailsModalOpen(true);
+                      }}>
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card List */}
+          <div className="mobile-card-list">
+            {entries.map(entry => (
+              <div 
+                key={entry.id} 
+                className="mobile-card-item"
+                onClick={() => {
+                  setSelectedLedgerEntry(entry);
+                  setIsDetailsModalOpen(true);
+                }}
+              >
+                <div className="mobile-card-header">
+                  <div className="mobile-card-title">
+                    {entry.sale_order_no || entry.purchase_order_no || `Ref #${entry.id}`}
+                  </div>
+                  <span style={{
+                    display: 'inline-block', padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 600,
+                    backgroundColor: entry.status === 'PAID' ? 'var(--color-success)' : entry.status === 'PARTIALLY_PAID' ? 'var(--color-warning)' : 'var(--color-danger)', color: 'white'
+                  }}>
+                    {entry.status.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="mobile-card-row">
+                  <span className="mobile-card-subtitle">
+                    {new Date(entry.entry_date || entry.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  {entry.truck_no && (
+                    <span className="mobile-card-badge">Truck: {entry.truck_no}</span>
+                  )}
+                </div>
+
+                <div className="mobile-card-row" style={{ marginTop: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Amount</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formatAmount(entry.amount)}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Remaining</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: entry.remaining_amount > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
+                      {formatAmount(entry.remaining_amount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {selectedLedgerEntry && (
@@ -448,7 +498,7 @@ function CustomerOverviewSummary({ customer }) {
     .slice(0, 5);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+    <div className="card-grid" style={{ marginTop: '1.25rem' }}>
       <div className="card" style={{ margin: 0 }}>
         <div className="card-title">Customer Summary</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

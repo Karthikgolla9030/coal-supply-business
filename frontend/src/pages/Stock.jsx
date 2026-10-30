@@ -143,7 +143,7 @@ export default function StockPage() {
       <h2 className="section-title">STOCK MOVEMENT</h2>
 
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 240px', maxWidth: '360px' }}>
+        <div className="search-bar">
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="stock-search"

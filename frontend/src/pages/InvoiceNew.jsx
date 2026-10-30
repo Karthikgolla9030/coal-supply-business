@@ -230,8 +230,10 @@ export default function InvoiceNew() {
 
       {/* Page header */}
       <div className="page-header">
-        <h1 className="page-title">Create New Invoice</h1>
-        <p className="page-subtitle">Fill in all required fields and save to generate the invoice record.</p>
+        <div className="page-header-content">
+          <h1 className="page-title">Create New Invoice</h1>
+          <p className="page-subtitle">Fill in all required fields and save to generate the invoice record.</p>
+        </div>
       </div>
 
       {/* Top alert */}

@@ -296,7 +296,7 @@ export default function ReportDetail() {
           </div>
           
           <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', width: '100%' }}>
-            <div className="search-bar" style={{ maxWidth: '300px', width: '100%' }}>
+            <div className="search-bar">
               <span className="search-bar-icon"><Search size={16} /></span>
               <input
                 className="form-input"

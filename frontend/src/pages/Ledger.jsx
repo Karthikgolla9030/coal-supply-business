@@ -205,8 +205,8 @@ export default function Ledger() {
               </p>
             </div>
             
-            <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+            <div className="search-bar" style={{ width: '100%' }}>
+              <span className="search-bar-icon"><Search size={16} /></span>
               <input
                 type="text"
                 className="form-control"
@@ -220,11 +220,11 @@ export default function Ledger() {
 
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
-              <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                 Loading ledger entries...
               </div>
             ) : filteredEntries.length === 0 ? (
-              <div style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+              <div style={{ padding: '2.5rem 1.25rem', textAlign: 'center' }}>
                 <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
                   {searchQuery ? "No entries found matching your search." : 
                   activeTab === 'To Receive' ? "No customers still need to pay." : 

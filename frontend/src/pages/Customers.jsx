@@ -74,7 +74,7 @@ export default function CustomersPage() {
 
       {/* Toolbar */}
       <FilterBar>
-        <div className="search-bar" style={{ flex: '1 1 280px', maxWidth: '360px' }}>
+        <div className="search-bar">
           <span className="search-bar-icon"><Search size={16} /></span>
           <input
             id="customer-search"
@@ -86,12 +86,12 @@ export default function CustomersPage() {
           />
         </div>
         
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none' }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap', userSelect: 'none', width: 'auto' }}>
           <input
             type="checkbox"
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
-            style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary)' }}
+            style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
           />
           <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Show inactive</span>
         </label>

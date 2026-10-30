@@ -157,16 +157,18 @@ export default function BusinessProfilePage() {
   return (
     <div className="page-content">
       <div className="page-header">
-        <div>
+        <div className="page-header-content">
           <h1 className="page-title">Business Profile</h1>
           <p className="page-subtitle">
             This information appears on every invoice you generate.
           </p>
         </div>
         {!isEditing && (
-          <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
-            <Edit2 size={16} /> Edit
-          </button>
+          <div className="page-header-action">
+            <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
+              <Edit2 size={16} /> Edit
+            </button>
+          </div>
         )}
       </div>
 
