@@ -31,7 +31,24 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum, Q
 from django.conf import settings
-from django.conf import settings
+import django
+
+# Compatibility wrapper for CheckConstraint across Django versions (< 5.1 vs >= 5.1 / 6.0+)
+if django.VERSION < (5, 1):
+    class _CompatCheckConstraint(models.CheckConstraint):
+        def __init__(self, *args, **kwargs):
+            if 'condition' in kwargs:
+                kwargs['check'] = kwargs.pop('condition')
+            super().__init__(*args, **kwargs)
+    models.CheckConstraint = _CompatCheckConstraint
+else:
+    class _CompatCheckConstraint(models.CheckConstraint):
+        def __init__(self, *args, **kwargs):
+            if 'check' in kwargs:
+                kwargs['condition'] = kwargs.pop('check')
+            super().__init__(*args, **kwargs)
+    models.CheckConstraint = _CompatCheckConstraint
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -345,15 +362,15 @@ class Purchase(models.Model):
         ordering = ["-purchase_date", "-created_at"]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(quantity_tons__gt=0),
+                condition=models.Q(quantity_tons__gt=0),
                 name='purchase_quantity_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(rate_per_ton__gte=0),
+                condition=models.Q(rate_per_ton__gte=0),
                 name='purchase_rate_non_negative'
             ),
             models.CheckConstraint(
-                check=models.Q(gst_rate__gte=0),
+                condition=models.Q(gst_rate__gte=0),
                 name='purchase_gst_rate_non_negative'
             )
         ]
@@ -433,15 +450,15 @@ class Sale(models.Model):
         ordering = ["-sale_date", "-created_at"]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(quantity_tons__gt=0),
+                condition=models.Q(quantity_tons__gt=0),
                 name='sale_quantity_positive'
             ),
             models.CheckConstraint(
-                check=models.Q(rate_per_ton__gte=0),
+                condition=models.Q(rate_per_ton__gte=0),
                 name='sale_rate_non_negative'
             ),
             models.CheckConstraint(
-                check=models.Q(gst_rate__gte=0),
+                condition=models.Q(gst_rate__gte=0),
                 name='sale_gst_rate_non_negative'
             )
         ]
@@ -527,7 +544,7 @@ class Expense(models.Model):
         ordering = ["-expense_date", "-created_at"]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(amount__gt=0),
+                condition=models.Q(amount__gt=0),
                 name='expense_amount_positive'
             )
         ]
@@ -734,27 +751,27 @@ class Invoice(models.Model):
             ),
             # Prevent obviously invalid monetary values at DB level
             models.CheckConstraint(
-                check=models.Q(taxable_amount__gte=0),
+                condition=models.Q(taxable_amount__gte=0),
                 name="invoice_taxable_amount_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(total_amount__gte=0),
+                condition=models.Q(total_amount__gte=0),
                 name="invoice_total_amount_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(cgst_rate__gte=0),
+                condition=models.Q(cgst_rate__gte=0),
                 name="invoice_cgst_rate_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(sgst_rate__gte=0),
+                condition=models.Q(sgst_rate__gte=0),
                 name="invoice_sgst_rate_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(igst_rate__gte=0),
+                condition=models.Q(igst_rate__gte=0),
                 name="invoice_igst_rate_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(tcs_rate__gte=0),
+                condition=models.Q(tcs_rate__gte=0),
                 name="invoice_tcs_rate_non_negative",
             ),
         ]
@@ -828,15 +845,15 @@ class InvoiceItem(models.Model):
                 name="unique_serial_number_per_invoice",
             ),
             models.CheckConstraint(
-                check=models.Q(quantity__gte=0),
+                condition=models.Q(quantity__gte=0),
                 name="item_quantity_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(rate__gte=0),
+                condition=models.Q(rate__gte=0),
                 name="item_rate_non_negative",
             ),
             models.CheckConstraint(
-                check=models.Q(amount__gte=0),
+                condition=models.Q(amount__gte=0),
                 name="item_amount_non_negative",
             ),
         ]
@@ -940,7 +957,7 @@ class LedgerEntry(models.Model):
     class Meta:
         verbose_name_plural = "Ledger Entries"
         constraints = [
-            models.CheckConstraint(check=models.Q(amount__gt=0), name='ledger_amount_positive')
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='ledger_amount_positive')
         ]
         indexes = [
             models.Index(fields=['business', 'status']),
